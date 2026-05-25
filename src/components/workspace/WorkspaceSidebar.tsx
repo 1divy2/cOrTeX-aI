@@ -95,22 +95,26 @@ export default function WorkspaceSidebar() {
   return (
     <motion.aside
       animate={{
-        width: collapsed
-          ? 96
-          : 280,
-      }}
+  width:
+    typeof window !== "undefined" &&
+    window.innerWidth < 1024
+      ? "100%"
+      : collapsed
+      ? 96
+      : 280,
+}}
       transition={{
         duration: 0.28,
         ease: [0.22, 1, 0.36, 1],
       }}
-      className="fixed left-0 top-0 z-[40] hidden h-screen shrink-0 overflow-hidden border-r border-white/10 bg-[rgba(8,8,14,0.55)] backdrop-blur-[30px] lg:flex"
+      className="fixed bottom-0 left-0 top-auto z-[50] flex h-20 w-full shrink-0 overflow-hidden border-t border-white/[0.06] bg-[rgba(8,8,14,0.82)] backdrop-blur-[30px] lg:top-0 lg:h-screen lg:w-auto lg:border-r lg:border-t-0"
     >
 
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.18),transparent_38%),radial-gradient(circle_at_bottom,rgba(34,211,238,0.12),transparent_35%)]" />
 
-      <div className="relative flex h-screen w-full flex-col overflow-hidden">
+      <div className="relative flex h-full w-full flex-row overflow-hidden lg:h-screen lg:flex-col">
 
-        <div className="shrink-0 border-b border-white/10 px-4 py-5">
+        <div className="hidden shrink-0 border-b border-white/10 px-4 py-5 lg:block">
 
           <div
             className={`flex items-center ${
@@ -213,7 +217,7 @@ export default function WorkspaceSidebar() {
 
           <div className="flex min-h-full flex-col justify-between">
 
-            <div className="flex flex-col gap-2 px-3 py-6">
+          <div className="flex w-full flex-row items-center justify-around gap-1 px-2 py-2 lg:flex-col lg:gap-2 lg:px-3 lg:py-6">
 
               {items.map(
                 (
@@ -234,8 +238,8 @@ export default function WorkspaceSidebar() {
                       to={item.to}
                       className={`group relative flex items-center overflow-visible rounded-2xl transition-all duration-300 ${
                         collapsed
-                          ? "justify-center px-0 py-4"
-                          : "gap-4 px-4 py-4"
+  ? "justify-center px-0 py-3 lg:py-4"
+  : "justify-center px-2 py-3 lg:justify-start lg:gap-4 lg:px-4 lg:py-4"
                       } ${
                         active
                           ? "bg-white/[0.06] text-white shadow-[0_0_30px_rgba(168,85,247,0.12)]"
@@ -264,7 +268,9 @@ export default function WorkspaceSidebar() {
 
                       <AnimatePresence mode="wait">
 
-                        {!collapsed && (
+                        {!collapsed &&
+typeof window !== "undefined" &&
+window.innerWidth >= 1024 && (
                           <motion.span
                             initial={{
                               opacity: 0,
@@ -298,7 +304,9 @@ export default function WorkspaceSidebar() {
 
             </div>
 
-            {!collapsed && (
+            {!collapsed &&
+typeof window !== "undefined" &&
+window.innerWidth >= 1024 && (
               <div className="p-4 pt-0">
 
                 <AnimatePresence>

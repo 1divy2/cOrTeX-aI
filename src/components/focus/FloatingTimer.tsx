@@ -297,7 +297,7 @@ export default function FloatingTimer() {
                 y: 0,
                 opacity: 1,
               }}
-              className="rounded-[40px] border border-white/10 bg-black/60 p-12 text-center shadow-[0_0_80px_rgba(168,85,247,0.4)] backdrop-blur-3xl"
+             className="mx-4 rounded-[32px] border border-white/[0.06] bg-black/60 p-7 text-center shadow-[0_0_80px_rgba(168,85,247,0.25)] backdrop-blur-3xl lg:p-12"
             >
 
               <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400 shadow-[0_0_60px_rgba(168,85,247,0.45)]">
@@ -347,12 +347,12 @@ export default function FloatingTimer() {
             transition={{
               duration: 0.25,
             }}
-            className="fixed bottom-24 right-6 z-[100] flex max-h-[calc(100vh-120px)] w-[380px] flex-col overflow-hidden rounded-[34px] border border-white/10 bg-black/50 shadow-[0_0_80px_rgba(168,85,247,0.28)] backdrop-blur-3xl"
+           className="fixed bottom-24 left-1/2 z-[100] flex max-h-[calc(100vh-110px)] w-[92vw] max-w-[380px] -translate-x-1/2 flex-col overflow-hidden rounded-[28px] border border-white/[0.06] bg-black/60 shadow-[0_0_80px_rgba(168,85,247,0.20)] backdrop-blur-3xl lg:left-auto lg:right-6 lg:w-[380px] lg:translate-x-0"
           >
 
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.16),transparent_55%)]" />
 
-            <div className="relative flex-1 overflow-y-auto p-7">
+            <div className="relative flex-1 overflow-y-auto p-5 lg:p-7">
 
               <div className="flex items-center justify-between">
 
@@ -399,7 +399,7 @@ export default function FloatingTimer() {
 
               <div className="mt-10 flex flex-col items-center">
 
-                <div className="relative flex h-60 w-60 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] shadow-inner">
+                <div className="relative flex h-44 w-44 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] shadow-inner sm:h-52 sm:w-52 lg:h-60 lg:w-60">
 
                   <motion.div
                     animate={{
@@ -428,7 +428,7 @@ export default function FloatingTimer() {
 
                     </p>
 
-                    <h1 className="mt-3 text-5xl font-black tracking-tight text-white">
+                    <h1 className="mt-3 text-3xl font-black tracking-tight text-white sm:text-4xl lg:text-5xl">
 
                       {formatted}
 
@@ -446,7 +446,7 @@ export default function FloatingTimer() {
                       onClick={
                         startTimer
                       }
-                      className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg transition hover:scale-105"
+                      className="flex h-12 w-12 lg:h-14 lg:w-14 items-center justify-center rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg transition hover:scale-105"
                     >
 
                       <Play className="h-5 w-5" />
@@ -646,7 +646,7 @@ export default function FloatingTimer() {
         onClick={() =>
           setOpen(!open)
         }
-        className="fixed bottom-6 right-6 z-[100] flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white shadow-[0_0_60px_rgba(168,85,247,0.45)]"
+        className="fixed bottom-24 right-4 z-[100] flex h-14 w-14 items-center justify-center rounded-full lg:bottom-6 lg:right-6 lg:h-16 lg:w-16 bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-500 text-white shadow-[0_0_60px_rgba(168,85,247,0.45)]"
       >
 
         <Timer className="h-6 w-6" />

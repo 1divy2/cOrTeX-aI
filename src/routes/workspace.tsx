@@ -11,6 +11,7 @@ import WorkspaceSidebar from "@/components/workspace/WorkspaceSidebar";
 import WorkspaceHeader from "@/components/workspace/WorkspaceHeader";
 import FloatingTimer from "@/components/workspace/FloatingTimer";
 
+
 import AIInsights from "@/components/dashboard/AIInsights";
 import ProductivityHeatmap from "@/components/dashboard/ProductivityHeatmap";
 import CognitiveRadar from "@/components/dashboard/CognitiveRadar";
@@ -66,8 +67,7 @@ function WorkspacePage() {
           overflow-y-auto
           transition-all
           duration-300
-          pl-[96px]
-          lg:pl-[280px]
+          pl-0 lg:pl-[280px]
         "
       >
 
@@ -75,11 +75,11 @@ function WorkspacePage() {
 
         <WorkspaceHeader />
 
-        <div className="relative z-10 mx-auto flex w-full max-w-[1650px] flex-col gap-6 px-8 pb-10 pt-28">
+        <div className="relative z-10 flex w-full min-w-0 flex-col gap-6 px-4 pb-24 pt-24 lg:px-8 lg:pb-10 lg:pt-28">
 
-          <section className="relative overflow-hidden rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
+          <section className="relative overflow-hidden rounded-[36px] border border-white/10 bg-white/[0.03] p-5 lg:p-8 backdrop-blur-3xl">
 
-            <div className="relative flex flex-col gap-8 xl:flex-row xl:items-center xl:justify-between">
+            <div className="relative flex flex-col gap-8 flex-col xl:flex-row xl:items-center xl:justify-between">
 
               <div className="max-w-3xl">
 
@@ -91,7 +91,7 @@ function WorkspacePage() {
 
                 </div>
 
-                <h1 className="mt-6 text-5xl font-black leading-[0.95] tracking-tight xl:text-6xl">
+                <h1 className="text-3xl font-black leading-[0.95] tracking-tight sm:text-5xl xl:text-6xl">
 
                   Welcome back
 
@@ -107,7 +107,7 @@ function WorkspacePage() {
 
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-4">
 
                 <StatCard
                   icon={
@@ -152,7 +152,7 @@ function WorkspacePage() {
 
           </section>
 
-          <section className="grid gap-6 xl:grid-cols-[1.6fr_0.9fr]">
+          <section className="grid grid-cols-1 gap-6 2xl:grid-cols-[1.6fr_0.9fr]">
 
             <div className="space-y-6">
 
@@ -188,7 +188,7 @@ function StatCard({
   value,
 }: any) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-black/20 p-5 backdrop-blur-xl">
+    <div className="rounded-3xl border border-white/10 bg-black/20 p-4 lg:p-5 backdrop-blur-xl">
 
       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/5">
 
@@ -202,7 +202,7 @@ function StatCard({
 
       </p>
 
-      <h2 className="mt-1 text-4xl font-black">
+      <h2 className="mt-1 text-3xl lg:text-4xl font-black">
 
         {value}
 
