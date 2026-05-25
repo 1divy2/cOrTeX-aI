@@ -253,7 +253,7 @@ export function CTA() {
               <button
                 onClick={() =>
                   window.open(
-                    "https://github.com",
+                    "https://github.com/1divy2/cOrTeX-aI",
                     "_blank"
                   )
                 }

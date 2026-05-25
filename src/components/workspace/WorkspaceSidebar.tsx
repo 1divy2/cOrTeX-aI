@@ -10,6 +10,8 @@ import {
   PanelLeftOpen,
 } from "lucide-react";
 
+import logo from "@/assets/logo.png";
+
 import {
   Link,
   useRouterState,
@@ -123,11 +125,15 @@ export default function WorkspaceSidebar() {
               className="group flex items-center gap-3 overflow-hidden"
             >
 
-              <div className="flex h-11 w-11 min-w-[44px] items-center justify-center rounded-2xl bg-aurora shadow-[0_0_40px_rgba(168,85,247,0.35)] transition duration-300 group-hover:scale-105">
+              <div className="flex h-14 w-14 min-w-[56px] items-center justify-center overflow-hidden rounded-2xl bg-black transition duration-300 group-hover:scale-105">
 
-                <Sparkles className="h-5 w-5 text-black" />
+  <img
+    src={logo}
+    alt="corTeX.ai logo"
+    className="h-[92%] w-[92%] object-contain"
+  />
 
-              </div>
+</div>
 
               <AnimatePresence mode="wait">
 

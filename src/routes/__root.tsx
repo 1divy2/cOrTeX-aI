@@ -6,6 +6,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  ScrollRestoration,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -244,9 +245,15 @@ function RootShell({
 
       <head>
 
-        <HeadContent />
+  <link
+    rel="icon"
+    type="image/png"
+    href="/favicon.png"
+  />
 
-      </head>
+  <HeadContent />
+
+</head>
 
       <body className="bg-background text-white antialiased transition-colors duration-500">
 
@@ -279,7 +286,9 @@ function RootComponent() {
 
       <ThemeController />
 
-      <>
+     <>
+  <ScrollRestoration />
+
   <Outlet />
 
   <CommandPalette />

@@ -15,6 +15,7 @@ import {
   useRef,
   useState,
 } from "react";
+import logo from "@/assets/logo.png";
 
 import {
   useNavigate,
@@ -231,8 +232,8 @@ export function Navbar() {
           <nav
             className={`relative flex items-center justify-between rounded-full border px-5 py-3 transition-all duration-500 ${
               scrolled
-                ? "border-white/15 bg-black/60 shadow-[0_0_60px_rgba(168,85,247,0.22)] backdrop-blur-3xl"
-                : "border-white/10 bg-white/[0.04] shadow-glow backdrop-blur-2xl"
+  ? "border-transparent bg-black/60 shadow-[0_0_60px_rgba(168,85,247,0.10)] backdrop-blur-3xl"
+  : "border-transparent bg-white/[0.03] shadow-[0_0_50px_rgba(168,85,247,0.08)] backdrop-blur-2xl"
             }`}
           >
 
@@ -240,29 +241,30 @@ export function Navbar() {
 
             <a
               href="/"
-              className="group relative z-10 flex items-center gap-3"
+              className="relative z-10 flex items-center gap-3"
             >
 
               <motion.div
-                whileHover={{
-                  rotate: 8,
-                  scale: 1.08,
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 300,
-                }}
-                className="relative flex h-9 w-9 items-center justify-center rounded-2xl bg-aurora shadow-glow"
-              >
+  whileHover={{
+    rotate: 4,
+    scale: 1.06,
+  }}
+  transition={{
+    type: "spring",
+    stiffness: 300,
+  }}
+  className="relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-2xl bg-black"
+>
 
-                <Brain
-                  className="h-4 w-4 text-background"
-                  strokeWidth={2.5}
-                />
+  <img
+    src={logo}
+    alt="corTeX.ai logo"
+    className="h-full w-full object-cover"
+  />
 
-                <div className="absolute inset-0 rounded-2xl bg-aurora opacity-0 blur-md transition-opacity group-hover:opacity-70" />
+  <div className="absolute inset-0 rounded-2xl bg-aurora opacity-0 blur-md transition-opacity group-hover:opacity-60" />
 
-              </motion.div>
+</motion.div>
 
               <span className="font-display text-lg font-semibold tracking-tight text-white">
 
@@ -296,7 +298,7 @@ export function Navbar() {
                   {hoverIdx === i && (
                     <motion.span
                       layoutId="nav-pill"
-                      className="absolute inset-0 rounded-full border border-white/10 bg-white/[0.08]"
+                      className="absolute inset-0 rounded-full bg-white/[0.06]"
                       transition={{
                         type: "spring",
                         stiffness: 380,

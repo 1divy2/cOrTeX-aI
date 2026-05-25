@@ -226,7 +226,10 @@ export function Stats() {
   }, [productivity]);
 
   return (
-    <section className="relative overflow-hidden px-6 py-32">
+    <section
+  id="analytics"
+  className="relative overflow-hidden px-6 py-32"
+>
 
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.14),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.10),transparent_35%)]" />
 
