@@ -9,16 +9,27 @@ export type AIInsight = {
   description: string;
 };
 
-export function generateInsights(
-  sessions: any[],
-  dailyAnalytics: any[]
-): AIInsight[] {
+type GenerateInsightsParams =
+  {
+    sessions: any[];
+
+    analytics: any;
+
+    notesCount: number;
+  };
+
+export function generateInsights({
+  sessions,
+  analytics,
+  notesCount,
+}: GenerateInsightsParams): AIInsight[] {
 
   const insights: AIInsight[] =
     [];
 
   if (
-    !sessions.length
+    !sessions ||
+    sessions.length === 0
   ) {
     return [
       {
@@ -33,11 +44,18 @@ export function generateInsights(
     ];
   }
 
+  const sortedSessions =
+    [...sessions].sort(
+      (a, b) =>
+        b.endedAt -
+        a.endedAt
+    );
+
   const totalSessions =
-    sessions.length;
+    sortedSessions.length;
 
   const averageRating =
-    sessions.reduce(
+    sortedSessions.reduce(
       (
         acc,
         session
@@ -48,7 +66,10 @@ export function generateInsights(
     ) / totalSessions;
 
   const recentSessions =
-    sessions.slice(-5);
+    sortedSessions.slice(
+      0,
+      5
+    );
 
   const recentAverage =
     recentSessions.reduce(
@@ -81,13 +102,13 @@ export function generateInsights(
   }
 
   const eveningSessions =
-    sessions.filter(
+    sortedSessions.filter(
       (
         session
       ) => {
         const hour =
           new Date(
-            session.completedAt
+            session.endedAt
           ).getHours();
 
         return (
@@ -98,13 +119,13 @@ export function generateInsights(
     );
 
   const morningSessions =
-    sessions.filter(
+    sortedSessions.filter(
       (
         session
       ) => {
         const hour =
           new Date(
-            session.completedAt
+            session.endedAt
           ).getHours();
 
         return (
@@ -130,7 +151,7 @@ export function generateInsights(
   }
 
   const lowRatedSessions =
-    sessions.filter(
+    sortedSessions.filter(
       (
         session
       ) =>
@@ -154,36 +175,18 @@ export function generateInsights(
   }
 
   if (
-    dailyAnalytics.length >=
+    analytics.streak >=
     5
   ) {
-    const lastFive =
-      dailyAnalytics.slice(
-        -5
-      );
+    insights.push({
+      type: "success",
 
-    const consistency =
-      lastFive.every(
-        (
-          day
-        ) =>
-          day.sessions >
-          0
-      );
+      title:
+        "Consistency Locked In",
 
-    if (
-      consistency
-    ) {
-      insights.push({
-        type: "success",
-
-        title:
-          "Consistency Locked In",
-
-        description:
-          "You maintained productive activity for 5 consecutive tracked days.",
-      });
-    }
+      description:
+        `You maintained productive activity for ${analytics.streak} consecutive days.`,
+    });
   }
 
   const peakDayMap =
@@ -192,13 +195,13 @@ export function generateInsights(
       number
     >();
 
-  sessions.forEach(
+  sortedSessions.forEach(
     (
       session
     ) => {
       const day =
         new Date(
-          session.completedAt
+          session.endedAt
         ).toLocaleDateString(
           "en-US",
           {
@@ -247,6 +250,52 @@ export function generateInsights(
 
       description:
         `${peakDay} currently generates your highest focus output.`,
+    });
+  }
+
+  if (
+    analytics.totalFocusHours >=
+    10
+  ) {
+    insights.push({
+      type: "success",
+
+      title:
+        "Deep Work Capacity Expanding",
+
+      description:
+        `You have accumulated ${analytics.totalFocusHours.toFixed(
+          1
+        )} hours of focused work.`,
+    });
+  }
+
+  if (
+    notesCount > 0
+  ) {
+    insights.push({
+      type: "info",
+
+      title:
+        "Knowledge System Growing",
+
+      description:
+        `${notesCount} knowledge nodes are actively connected to your productivity flow.`,
+    });
+  }
+
+  if (
+    analytics.momentum <
+    35
+  ) {
+    insights.push({
+      type: "warning",
+
+      title:
+        "Momentum Needs Recovery",
+
+      description:
+        "Recent session intensity is lower than your average behavioral pattern.",
     });
   }
 

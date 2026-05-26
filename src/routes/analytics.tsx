@@ -24,9 +24,7 @@ import WorkspaceSidebar from "@/components/workspace/WorkspaceSidebar";
 
 import WorkspaceHeader from "@/components/workspace/WorkspaceHeader";
 
-import {
-  useProductivityStore,
-} from "@/store/productivity-store";
+
 
 import {
   useNotesStore,
@@ -34,6 +32,14 @@ import {
 import {
   generateInsights,
 } from "@/lib/analytics-insights";
+
+import {
+  useFocusStore,
+} from "@/store/focus-store";
+
+import {
+  generateAnalytics,
+} from "@/lib/analytics-engine";
 
 export const Route =
   createFileRoute("/analytics")({
@@ -51,33 +57,41 @@ const days = [
 ];
 
 function AnalyticsPage() {
-  const productivity =
-    useProductivityStore() as any;
-
   const notesStore =
     useNotesStore();
 
   const notes =
     notesStore?.notes || [];
 
-  const lifetimeStats =
-  productivity.getLifetimeStats();
+  const { sessions } =
+    useFocusStore();
 
-const sessions =
-  productivity.getSessions();
+  const analytics =
+    generateAnalytics(
+      sessions
+    );
 
-const totalFocusHours =
-  lifetimeStats.focusHours;
+  const totalFocusHours =
+    analytics.totalFocusHours;
 
-const completedSessions =
-  lifetimeStats.sessions;
+  const completedSessions =
+    analytics.totalSessions;
 
- const streak =
-  productivity.streak || 0;
+  const streak =
+    analytics.streak;
+
+  const momentum =
+    analytics.momentum;
+
+  const productivityScore =
+    analytics.neuralScore;
+
+  const peakDay =
+    analytics.peakDay;
 
   const weeklyActivity =
-    getWeeklyActivity(
-      sessions
+    analytics.weeklyTrend.map(
+      (d) => d.hours
     );
 
   const weeklyMax =
@@ -86,77 +100,94 @@ const completedSessions =
       1
     );
 
-  const productivityScore =
-    calculateProductivityScore(
-      totalFocusHours,
-      completedSessions,
-      streak,
-      notes.length
-    );
-
   const distribution =
-    getFocusDistribution(
-      sessions
+    Object.entries(
+      analytics.focusDistribution
+    ).map(
+      ([label, value]) => ({
+        label,
+        value,
+      })
     );
 
   const contributionData =
-    getContributionData(
-      sessions
+    new Map(
+      analytics.heatmap.map(
+        (d) => [
+          d.date,
+          d.sessions,
+        ]
+      )
     );
 
-  const hourlyHeat =
-    getHourlyHeat(
-      sessions
-    );
+  const hourlyHeat = {
+    hours:
+      analytics.peakHoursMap.map(
+        (d) =>
+          d.sessions
+      ),
 
-  const peakDay =
-    getPeakDay(
-      weeklyActivity
-    );
-
-  const momentum =
-    getMomentum(
-      sessions
-    );
+    peakHour:
+      analytics.peakHour,
+  };
 
   const intensityTimeline =
-    getIntensityTimeline(
-      sessions
-    );
-  const dailyAnalytics =
-  productivity.getDailyAnalytics();
+    sessions
+      .slice(-12)
+      .map(
+        (
+          session,
+          index
+        ) => ({
+          id: index,
+          value:
+            Math.round(
+              session.duration /
+                60
+            ),
+        })
+      );
 
-const last7Days =
-  [...dailyAnalytics]
-    .sort(
-      (
-        a: any,
-        b: any
-      ) =>
-        new Date(
-          a.date
-        ).getTime() -
-        new Date(
-          b.date
-        ).getTime()
-    )
-    .slice(-7);
- const aiInsights =
-  generateInsights(
+  const dailyAnalytics =
+    analytics.weeklyTrend.map(
+      (day) => ({
+        date: day.day,
+        focusHours:
+          day.hours,
+      })
+    );
+
+  const last7Days =
+    dailyAnalytics;
+
+  const aiInsights =
+  generateInsights({
     sessions,
-    dailyAnalytics
-  );   
+    analytics,
+    notesCount: notes.length,
+  });
 
   return (
     <div className="min-h-screen bg-background text-white">
 
       <WorkspaceSidebar />
 
-      <div className="ml-[84px] lg:ml-[280px]">
+      <WorkspaceSidebar />
 
-        <WorkspaceHeader />
+<motion.div
+  layout
+  transition={{
+    layout: {
+      duration: 0.32,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  }}
+  className="ml-[84px] lg:ml-[280px] transition-[margin] duration-300 ease-out"
+>
 
-        <main className="relative overflow-y-auto pt-28">
+  <WorkspaceHeader />
+
+  <main className="relative overflow-y-auto pt-28">
 
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.16),transparent_25%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.12),transparent_25%)]" />
 
@@ -244,14 +275,11 @@ const last7Days =
 
             <section className="mt-8 grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
 
-              <VelocityGraph
-                weeklyActivity={
-                  weeklyActivity
-                }
-                weeklyMax={
-                  weeklyMax
-                }
-              />
+              <MomentumGraph
+  weeklyTrend={
+    analytics.weeklyTrend
+  }
+/>
 
               <CognitiveCard
                 score={
@@ -543,211 +571,13 @@ const last7Days =
 
 </section>
 
-          </div>
+                   </div>
 
         </main>
 
-      </div>
-
+    </motion.div>
     </div>
   );
-}
-
-function calculateProductivityScore(
-  hours: number,
-  sessions: number,
-  streak: number,
-  notes: number
-) {
-  const raw =
-    hours * 8 +
-    sessions * 2 +
-    streak * 4 +
-    notes * 0.7;
-
-  return Math.min(
-    100,
-    Math.round(raw)
-  );
-}
-
-
-function getWeeklyActivity(
-  sessions: any[]
-) {
-  const result =
-    Array(7).fill(0);
-
-  sessions.forEach(
-    (session: any) => {
-      const date =
-        new Date(
-          session.completedAt ||
-            Date.now()
-        );
-
-      result[
-        date.getDay()
-      ] += 1;
-    }
-  );
-
-  return result;
-}
-
-function getContributionData(
-  sessions: any[]
-) {
-  const map =
-    new Map();
-
-  sessions.forEach(
-    (session: any) => {
-      const date =
-        new Date(
-          session.completedAt ||
-            Date.now()
-        )
-          .toISOString()
-          .split("T")[0];
-
-      map.set(
-        date,
-        (map.get(date) || 0) + 1
-      );
-    }
-  );
-
-  return map;
-}
-
-function getFocusDistribution(
-  sessions: any[]
-) {
-  const buckets = {
-    Morning: 0,
-    Afternoon: 0,
-    Evening: 0,
-    Night: 0,
-  };
-
-  sessions.forEach(
-    (session: any) => {
-      const hour =
-        new Date(
-          session.completedAt ||
-            Date.now()
-        ).getHours();
-
-      if (
-        hour >= 6 &&
-        hour < 12
-      )
-        buckets.Morning++;
-      else if (
-        hour >= 12 &&
-        hour < 17
-      )
-        buckets.Afternoon++;
-      else if (
-        hour >= 17 &&
-        hour < 22
-      )
-        buckets.Evening++;
-      else buckets.Night++;
-    }
-  );
-
-  const total =
-    Object.values(
-      buckets
-    ).reduce(
-      (a, b) => a + b,
-      0
-    ) || 1;
-
-  return Object.entries(
-    buckets
-  ).map(([k, v]) => ({
-    label: k,
-    value: Math.round(
-      (v / total) * 100
-    ),
-  }));
-}
-
-function getHourlyHeat(
-  sessions: any[]
-) {
-  const hours =
-    Array(24).fill(0);
-
-  sessions.forEach(
-    (session: any) => {
-      const hour =
-        new Date(
-          session.completedAt ||
-            Date.now()
-        ).getHours();
-
-      hours[hour]++;
-    }
-  );
-
-  const peak =
-    hours.indexOf(
-      Math.max(...hours)
-    );
-
-  return {
-    hours,
-    peakHour: peak,
-  };
-}
-
-function getPeakDay(
-  weekly: number[]
-) {
-  const max =
-    Math.max(...weekly);
-
-  return days[
-    weekly.indexOf(max)
-  ];
-}
-
-function getMomentum(
-  sessions: any[]
-) {
-  if (
-    !sessions.length
-  )
-    return 0;
-
-  return Math.min(
-    100,
-    Math.round(
-      sessions.length * 4
-    )
-  );
-}
-
-function getIntensityTimeline(
-  sessions: any[]
-) {
-  return sessions
-    .slice(0, 12)
-    .map(
-      (
-        session: any,
-        index: number
-      ) => ({
-        id: index,
-        value:
-          session.duration ||
-          25,
-      })
-    );
 }
 
 function GlassMetric({
@@ -780,10 +610,39 @@ function GlassMetric({
   );
 }
 
-function VelocityGraph({
-  weeklyActivity,
-  weeklyMax,
+function MomentumGraph({
+  weeklyTrend,
 }: any) {
+
+  const velocityData =
+    weeklyTrend.map(
+      (
+        day: any,
+        index: number
+      ) => {
+
+        if (index === 0) {
+          return 0;
+        }
+
+        return (
+          day.hours -
+          weeklyTrend[
+            index - 1
+          ].hours
+        );
+      }
+    );
+
+  const max =
+    Math.max(
+      ...velocityData.map(
+        (v: number) =>
+          Math.abs(v)
+      ),
+      1
+    );
+
   return (
     <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
 
@@ -799,7 +658,7 @@ function VelocityGraph({
 
           <p className="mt-2 text-zinc-500">
 
-            Weekly cognitive acceleration
+            Daily cognitive momentum shift
 
           </p>
 
@@ -809,22 +668,29 @@ function VelocityGraph({
 
       </div>
 
-      <div className="mt-14 flex h-[340px] items-end gap-4">
+      <div className="mt-16 flex h-[320px] items-center justify-between gap-4">
 
-        {weeklyActivity.map(
+        {velocityData.map(
           (
             value: number,
             index: number
           ) => {
+
             const height =
-              (value /
-                weeklyMax) *
-              100;
+              Math.max(
+                16,
+                (Math.abs(value) /
+                  max) *
+                  180
+              );
+
+            const positive =
+              value >= 0;
 
             return (
               <div
                 key={index}
-                className="flex flex-1 flex-col items-center"
+                className="flex flex-1 flex-col items-center justify-end"
               >
 
                 <motion.div
@@ -832,27 +698,38 @@ function VelocityGraph({
                     height: 0,
                   }}
                   animate={{
-                    height: `${Math.max(
-                      height,
-                      6
-                    )}%`,
+                    height,
                   }}
                   transition={{
-                    duration: 0.8,
+                    duration: 0.6,
                     delay:
-                      index *
-                      0.05,
+                      index * 0.05,
                   }}
-                  className="w-full rounded-t-[28px] bg-gradient-to-t from-purple-500 via-pink-500 to-cyan-400 shadow-[0_0_40px_rgba(168,85,247,0.35)]"
+                  className={`w-full rounded-[20px] ${
+                    positive
+                      ? "bg-gradient-to-t from-cyan-500 to-purple-500"
+                      : "bg-gradient-to-t from-red-500 to-orange-400"
+                  }`}
                 />
 
-                <p className="mt-4 text-sm text-zinc-500">
+                <p className="mt-3 text-xs text-zinc-500">
 
                   {
                     days[
                       index
                     ]
                   }
+
+                </p>
+
+                <p className="mt-1 text-sm font-bold text-white">
+
+                  {value > 0
+                    ? "+"
+                    : ""}
+                  {value.toFixed(
+                    1
+                  )}
 
                 </p>
 
@@ -995,6 +872,13 @@ function HourlyHeatmap({
 function SessionTimeline({
   timeline,
 }: any) {
+    const maxValue =
+  Math.max(
+    ...timeline.map(
+      (t: any) => t.value
+    ),
+    1
+  );
   return (
     <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
 
@@ -1010,29 +894,57 @@ function SessionTimeline({
 
       </p>
 
-      <div className="mt-12 flex items-end gap-3">
+    <div className="mt-12 flex h-[260px] items-end gap-4">
 
-        {timeline.map(
-          (
-            item: any
-          ) => (
-            <motion.div
-              key={item.id}
-              initial={{
-                height: 0,
-              }}
-              animate={{
-                height: `${Math.min(
-                  item.value * 3,
-                  260
-                )}px`,
-              }}
-              className="flex-1 rounded-t-[20px] bg-gradient-to-t from-cyan-500 via-purple-500 to-pink-500"
-            />
-          )
-        )}
+  {timeline.map(
+    (
+      item: any,
+      index: number
+    ) => {
 
-      </div>
+      const height =
+        Math.max(
+          18,
+          (item.value /
+            maxValue) *
+            220
+        );
+
+      return (
+        <div
+          key={item.id}
+          className="flex flex-1 flex-col items-center justify-end"
+        >
+
+          <p className="mb-3 text-xs text-zinc-400">
+            {item.value}m
+          </p>
+
+          <motion.div
+            initial={{
+              height: 0,
+            }}
+            animate={{
+              height,
+            }}
+            transition={{
+              duration: 0.6,
+              delay:
+                index * 0.05,
+            }}
+            className="w-full rounded-t-[22px] bg-gradient-to-t from-cyan-500 via-purple-500 to-pink-500 shadow-[0_0_30px_rgba(168,85,247,0.35)]"
+          />
+
+          <p className="mt-3 text-xs text-zinc-500">
+            S{index + 1}
+          </p>
+
+        </div>
+      );
+    }
+  )}
+
+</div>
 
     </div>
   );
@@ -1041,6 +953,74 @@ function SessionTimeline({
 function PatternInsights({
   sessions,
 }: any) {
+
+  const averageRating =
+    sessions.length
+      ? (
+          sessions.reduce(
+            (
+              acc: number,
+              session: any
+            ) =>
+              acc +
+              session.rating,
+            0
+          ) /
+          sessions.length
+        ).toFixed(1)
+      : "0";
+
+  const averageDuration =
+    sessions.length
+      ? Math.round(
+          sessions.reduce(
+            (
+              acc: number,
+              session: any
+            ) =>
+              acc +
+              session.duration,
+            0
+          ) /
+            sessions.length /
+            60
+        )
+      : 0;
+
+  const highFocusSessions =
+    sessions.filter(
+      (
+        session: any
+      ) =>
+        session.rating >=
+        7
+    ).length;
+
+  const stability =
+    sessions.length
+      ? Math.round(
+          (highFocusSessions /
+            sessions.length) *
+            100
+        )
+      : 0;
+
+  const consistency =
+    Math.min(
+      100,
+      Math.round(
+        sessions.length *
+          8
+      )
+    );
+
+  const productiveState =
+    averageDuration >= 45
+      ? "Deep Flow"
+      : averageDuration >= 20
+      ? "Focused Rhythm"
+      : "Building Flow";
+
   return (
     <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
 
@@ -1060,34 +1040,22 @@ function PatternInsights({
 
         <InsightLine
           label="Most productive state"
-          value={
-            sessions.length > 8
-              ? "Deep Flow"
-              : "Building Flow"
-          }
+          value={productiveState}
+        />
+
+        <InsightLine
+          label="Average session rating"
+          value={`${averageRating}/8`}
         />
 
         <InsightLine
           label="Session stability"
-          value={`${Math.min(
-            100,
-            sessions.length *
-              5
-          )}%`}
+          value={`${stability}%`}
         />
 
         <InsightLine
           label="Cognitive consistency"
-          value={`${Math.min(
-            100,
-            sessions.length *
-              4
-          )}%`}
-        />
-
-        <InsightLine
-          label="Knowledge integration"
-          value="Active"
+          value={`${consistency}%`}
         />
 
       </div>
@@ -1265,17 +1233,33 @@ function ContributionGraph({
                     ];
 
                   return (
-                    <motion.div
-                      key={
-                        cell.date
-                      }
-                      whileHover={{
-                        scale: 1.3,
-                      }}
-                      className={`h-4 w-4 rounded-[4px] transition-all duration-200 ${intensity(
-                        cell.value
-                      )}`}
-                    />
+                    <div
+  key={cell.date}
+  className="group relative"
+>
+  <motion.div
+    whileHover={{
+      scale: 1.35,
+    }}
+    className={`h-4 w-4 rounded-[4px] transition-all duration-200 cursor-pointer ${intensity(
+      cell.value
+    )}`}
+  />
+
+  <div className="pointer-events-none absolute bottom-[140%] left-1/2 z-50 hidden -translate-x-1/2 rounded-xl border border-white/10 bg-[#09090f]/95 px-3 py-2 text-xs text-white shadow-2xl backdrop-blur-xl group-hover:block">
+
+    <p className="font-semibold">
+      {cell.value} sessions
+    </p>
+
+    <p className="mt-1 text-zinc-400">
+      {new Date(
+        cell.date
+      ).toLocaleDateString()}
+    </p>
+
+  </div>
+</div>
                   );
                 }
               )}

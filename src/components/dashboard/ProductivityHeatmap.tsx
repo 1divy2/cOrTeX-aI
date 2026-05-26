@@ -13,8 +13,8 @@ import {
 } from "react";
 
 import {
-  useProductivityStore,
-} from "@/store/productivity-store";
+  useFocusStore,
+} from "@/store/focus-store";
 
 function getColor(
   value: number
@@ -39,26 +39,41 @@ function getColor(
 }
 
 export default function ProductivityHeatmap() {
-  const {
-  getContributionData,
-  getSessions,
-} =
-  useProductivityStore();
+ const { sessions } =
+  useFocusStore();
 
   const [
     weekOffset,
     setWeekOffset,
   ] = useState(0);
 
-  const contributionData =
-    useMemo(
-      () =>
-        getContributionData(),
-      [
-        getSessions,
-        getContributionData,
-      ]
+ const contributionData =
+  useMemo(() => {
+    const map =
+      new Map<
+        string,
+        number
+      >();
+
+    sessions.forEach(
+      (session) => {
+        const key =
+          new Date(
+            session.endedAt
+          )
+            .toISOString()
+            .split("T")[0];
+
+        map.set(
+          key,
+          (map.get(key) || 0) +
+            1
+        );
+      }
     );
+
+    return map;
+  }, [sessions]);
 
   const totalColumns =
     30;

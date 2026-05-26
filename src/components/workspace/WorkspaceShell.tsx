@@ -1,7 +1,5 @@
 import {
   ReactNode,
-  useEffect,
-  useState,
 } from "react";
 
 import {
@@ -9,8 +7,11 @@ import {
 } from "framer-motion";
 
 import WorkspaceSidebar from "./WorkspaceSidebar";
-
 import WorkspaceHeader from "./WorkspaceHeader";
+
+import {
+  useWorkspaceStore,
+} from "@/store/workspace-store";
 
 type Props = {
   children: ReactNode;
@@ -19,55 +20,18 @@ type Props = {
 export default function WorkspaceShell({
   children,
 }: Props) {
-  const [
+
+  const {
     sidebarCollapsed,
-    setSidebarCollapsed,
-  ] = useState(false);
-
-  useEffect(() => {
-    const syncSidebar =
-      () => {
-        const collapsed =
-          localStorage.getItem(
-            "sidebar-collapsed"
-          ) === "true";
-
-        setSidebarCollapsed(
-          collapsed
-        );
-      };
-
-    syncSidebar();
-
-    window.addEventListener(
-      "storage",
-      syncSidebar
-    );
-
-    const interval =
-      setInterval(
-        syncSidebar,
-        120
-      );
-
-    return () => {
-      window.removeEventListener(
-        "storage",
-        syncSidebar
-      );
-
-      clearInterval(
-        interval
-      );
-    };
-  }, []);
+  } = useWorkspaceStore();
 
   return (
-    <div className="min-h-screen bg-background text-white">
+    <div className="min-h-screen overflow-hidden bg-background text-white">
 
       <WorkspaceSidebar />
 
       <motion.main
+        layout
         animate={{
           paddingLeft:
             sidebarCollapsed
@@ -75,42 +39,56 @@ export default function WorkspaceShell({
               : 280,
         }}
         transition={{
-          duration: 0.28,
-          ease: [0.22, 1, 0.36, 1],
+          duration: 0.34,
+          ease: [
+            0.22,
+            1,
+            0.36,
+            1,
+          ],
         }}
         className="
           relative
           min-h-screen
-          overflow-x-visible
+          overflow-x-hidden
           overflow-y-auto
         "
       >
 
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.12),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.08),transparent_24%)]" />
-
-        <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.14),transparent_25%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.10),transparent_25%)]" />
 
         <WorkspaceHeader />
 
-        <div
+        <motion.div
+          layout
+          transition={{
+            duration: 0.34,
+            ease: [
+              0.22,
+              1,
+              0.36,
+              1,
+            ],
+          }}
           className="
             relative
             z-10
-            mx-auto
             flex
-            w-full
-            max-w-[1650px]
+            min-w-0
             flex-col
             gap-6
-            px-8
-            pb-10
-            pt-28
+            px-4
+            pb-24
+            pt-24
+            lg:px-8
+            lg:pb-10
+            lg:pt-28
           "
         >
 
           {children}
 
-        </div>
+        </motion.div>
 
       </motion.main>
 

@@ -24,6 +24,8 @@ type FocusSession = {
   duration: number;
 
   rating: SessionRating;
+
+  analyticsDate: string;
 };
 
 type FocusStore = {
@@ -48,6 +50,12 @@ type FocusStore = {
   sessions: FocusSession[];
 
   initialized: boolean;
+
+  hydrated: boolean;
+
+  setHydrated: (
+    state: boolean
+  ) => void;
 
   initializeSessions: (
     userId: string
@@ -121,6 +129,7 @@ function getAnalyticsDate() {
       "en-CA"
     );
 }
+
 export const useFocusStore =
   create<FocusStore>()(
     persist(
@@ -149,6 +158,16 @@ export const useFocusStore =
         sessions: [],
 
         initialized: false,
+
+        hydrated: false,
+
+        setHydrated: (
+          state
+        ) =>
+          set({
+            hydrated:
+              state,
+          }),
 
         initializeSessions:
           async (
@@ -210,6 +229,16 @@ export const useFocusStore =
 
                     rating:
                       session.rating,
+
+                    analyticsDate:
+                      session.analytics_date ||
+                      new Date(
+                        session.ended_at
+                      )
+                        .toISOString()
+                        .split(
+                          "T"
+                        )[0],
                   })
                 );
 
@@ -261,7 +290,9 @@ export const useFocusStore =
             elapsedTime,
           } = get();
 
-          if (!startedAt) {
+          if (
+            !startedAt
+          ) {
             return;
           }
 
@@ -378,23 +409,40 @@ export const useFocusStore =
             const now =
               Date.now();
 
+            const sessionStart =
+              now -
+              currentSessionSeconds *
+                1000;
+
+            if (
+              sessions.some(
+                (
+                  session
+                ) =>
+                  session.startedAt ===
+                  sessionStart
+              )
+            ) {
+              return;
+            }
+
             const newSession: FocusSession =
               {
                 id:
-                  `${Date.now()}-${Math.random()}`,
+                  crypto.randomUUID(),
 
                 startedAt:
-                  now -
-                  currentSessionSeconds *
-                    1000,
+                  sessionStart,
 
-                endedAt:
-                  now,
+                endedAt: now,
 
                 duration:
                   currentSessionSeconds,
 
                 rating,
+
+                analyticsDate:
+                  getAnalyticsDate(),
               };
 
             const updatedSessions =
@@ -471,117 +519,117 @@ export const useFocusStore =
 
                     ended_at:
                       newSession.endedAt,
+
+                    analytics_date:
+                      newSession.analyticsDate,
                   });
 
               if (
-  error
-) {
-  console.error(
-    "SUPABASE INSERT ERROR:",
-    error
-  );
-} else {
+                error
+              ) {
+                console.error(
+                  "SUPABASE INSERT ERROR:",
+                  error
+                );
+              } else {
+                const analyticsDate =
+                  getAnalyticsDate();
 
-  const analyticsDate =
-    getAnalyticsDate();
+                const {
+                  data:
+                    existingAnalytics,
+                } =
+                  await supabase
+                    .from(
+                      "daily_analytics"
+                    )
+                    .select(
+                      "*"
+                    )
+                    .eq(
+                      "user_id",
+                      userId
+                    )
+                    .eq(
+                      "analytics_date",
+                      analyticsDate
+                    )
+                    .maybeSingle();
 
-  const {
-    data:
-      existingAnalytics,
-  } =
-    await supabase
-      .from(
-        "daily_analytics"
-      )
-      .select("*")
-      .eq(
-        "user_id",
-        userId
-      )
-      .eq(
-        "analytics_date",
-        analyticsDate
-      )
-      .maybeSingle();
+                if (
+                  existingAnalytics
+                ) {
+                  await supabase
+                    .from(
+                      "daily_analytics"
+                    )
+                    .update({
+                      sessions:
+                        existingAnalytics.sessions +
+                        1,
 
-  if (
-    existingAnalytics
-  ) {
+                      focus_hours:
+                        Number(
+                          existingAnalytics.focus_hours
+                        ) +
+                        Number(
+                          (
+                            newSession.duration /
+                            3600
+                          ).toFixed(
+                            2
+                          )
+                        ),
 
-    await supabase
-      .from(
-        "daily_analytics"
-      )
-      .update({
-        sessions:
-          existingAnalytics.sessions +
-          1,
+                      productivity:
+                        Math.round(
+                          (
+                            existingAnalytics.productivity +
+                            newSession.rating *
+                              12.5
+                          ) / 2
+                        ),
+                    })
+                    .eq(
+                      "id",
+                      existingAnalytics.id
+                    );
+                } else {
+                  await supabase
+                    .from(
+                      "daily_analytics"
+                    )
+                    .insert({
+                      user_id:
+                        userId,
 
-        focus_hours:
-          Number(
-            existingAnalytics.focus_hours
-          ) +
-          Number(
-            (
-              newSession.duration /
-              3600
-            ).toFixed(1)
-          ),
+                      analytics_date:
+                        analyticsDate,
 
-        productivity:
-          Math.round(
-            (
-              existingAnalytics.productivity +
-              newSession.rating *
-                12.5
-            ) / 2
-          ),
-      })
-      .eq(
-        "id",
-        existingAnalytics.id
-      );
+                      sessions: 1,
 
-  } else {
+                      focus_hours:
+                        Number(
+                          (
+                            newSession.duration /
+                            3600
+                          ).toFixed(
+                            2
+                          )
+                        ),
 
-    await supabase
-      .from(
-        "daily_analytics"
-      )
-      .insert({
-        user_id:
-          userId,
+                      productivity:
+                        Math.round(
+                          newSession.rating *
+                            12.5
+                        ),
 
-        analytics_date:
-          analyticsDate,
+                      ai_uses: 0,
 
-        sessions: 1,
-
-        focus_hours:
-          Number(
-            (
-              newSession.duration /
-              3600
-            ).toFixed(1)
-          ),
-
-        productivity:
-          Math.round(
-            newSession.rating *
-              12.5
-          ),
-
-        ai_uses: 0,
-
-        tasks_done: 0,
-      });
-
-  }
-
-  await get().initializeSessions(
-    userId
-  );
-}
+                      tasks_done: 0,
+                    });
+                }
+              }
             } catch (
               error
             ) {
@@ -595,6 +643,37 @@ export const useFocusStore =
       {
         name:
           "coretex-focus-storage",
+
+        partialize: (
+          state
+        ) => ({
+          isRunning:
+            state.isRunning,
+
+          isPaused:
+            state.isPaused,
+
+          startedAt:
+            state.startedAt,
+
+          pausedAt:
+            state.pausedAt,
+
+          elapsedTime:
+            state.elapsedTime,
+
+          currentSessionSeconds:
+            state.currentSessionSeconds,
+        }),
+
+        onRehydrateStorage:
+          () => (
+            state
+          ) => {
+            state?.setHydrated(
+              true
+            );
+          },
       }
     )
   );
