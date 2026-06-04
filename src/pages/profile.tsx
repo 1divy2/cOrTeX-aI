@@ -10,14 +10,14 @@ import {
   Activity,
 } from "lucide-react";
 
-import {
-  useAuthStore,
-} from "@/store/auth-store";
+import { useAuthStore } from "@/store/auth-store";
+import { useProductivityStore } from "@/store/productivity-store";
+import { useNotesStore } from "@/store/notes-store";
 
 export default function ProfilePage() {
-  const {
-    user,
-  } = useAuthStore();
+  const { user } = useAuthStore();
+  const productivity = useProductivityStore();
+  const notes = useNotesStore((state) => state.notes);
 
   const joined =
     user?.metadata
@@ -105,10 +105,7 @@ export default function ProfilePage() {
                   </div>
 
                   <h1 className="mt-6 text-5xl font-black tracking-tight lg:text-6xl">
-
-                    {user?.displayName ||
-                      "Anonymous"}
-
+                    {user?.user_metadata?.full_name || user?.user_metadata?.name || user?.displayName || user?.email?.split('@')[0] || "Anonymous"}
                   </h1>
 
                   <p className="mt-4 text-lg text-zinc-400">
@@ -125,36 +122,26 @@ export default function ProfilePage() {
 
                 {[
                   {
-                    label:
-                      "Focus Streak",
-                    value: "12d",
+                    label: "Focus Streak",
+                    value: `${productivity.streak}d`,
                     icon: Flame,
                   },
-
                   {
-                    label:
-                      "AI Sessions",
-                    value: "84",
+                    label: "AI Actions",
+                    value: `${productivity.aiInteractions}`,
                     icon: Brain,
                   },
-
                   {
-                    label:
-                      "Deep Work",
-                    value: "126h",
+                    label: "Deep Work",
+                    value: `${Math.round(productivity.getTotalFocusHours())}h`,
                     icon: Clock3,
                   },
-
                   {
-                    label:
-                      "Knowledge Nodes",
-                    value: "342",
+                    label: "Knowledge Nodes",
+                    value: `${notes.length}`,
                     icon: Sparkles,
                   },
-                ].map(
-                  (
-                    stat
-                  ) => {
+                ].map((stat) => {
                     const Icon =
                       stat.icon;
 
@@ -204,15 +191,10 @@ export default function ProfilePage() {
                 </p>
 
                 <h2 className="mt-4 text-3xl font-bold">
-
-                  Founding Member
-
+                  Workspace Owner
                 </h2>
-
                 <p className="mt-4 text-zinc-400">
-
-                  Early access user helping shape the future of corTeX.ai.
-
+                  Primary administrator and architect of this neural workspace.
                 </p>
 
               </div>
