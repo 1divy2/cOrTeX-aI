@@ -187,7 +187,7 @@ const starterWords =
   );
 
 const starterNote: Note = {
-  id: crypto.randomUUID(),
+  id: "welcome-note-id",
 
   title:
     "Welcome to corTeX.ai",

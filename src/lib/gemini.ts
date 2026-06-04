@@ -1,12 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+let _genAI: GoogleGenerativeAI | null = null;
 
-if (!apiKey) {
-  throw new Error("Missing Gemini API Key");
-}
-
-const genAI = new GoogleGenerativeAI(apiKey);
+const getGenAI = () => {
+  if (!_genAI) {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "placeholder";
+    _genAI = new GoogleGenerativeAI(apiKey);
+  }
+  return _genAI;
+};
 
 export type AgentMode = 'researcher' | 'coach' | 'strategist' | 'writer' | 'planner' | 'productivity' | 'knowledge' | 'review' | 'default';
 
@@ -86,7 +88,7 @@ export async function askGemini(
   mode: AgentMode = 'default',
   contextStr: string = ""
 ) {
-  const model = genAI.getGenerativeModel({
+  const model = getGenAI().getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: getSystemPrompt(mode, contextStr),
   });
@@ -101,7 +103,7 @@ export async function streamGemini(
   mode: AgentMode = 'default',
   contextStr: string = ""
 ) {
-  const model = genAI.getGenerativeModel({
+  const model = getGenAI().getGenerativeModel({
     model: "gemini-2.5-flash",
     systemInstruction: getSystemPrompt(mode, contextStr),
   });

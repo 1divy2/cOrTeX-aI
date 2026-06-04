@@ -7,7 +7,9 @@ import { initAuth } from "@/firebase/auth";
 
 import { renderErrorPage } from "./lib/error-page";
 
-initAuth();
+if (typeof window !== "undefined") {
+  initAuth();
+}
 
 const errorMiddleware =
   createMiddleware().server(
