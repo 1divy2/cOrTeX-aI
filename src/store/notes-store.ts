@@ -1,6 +1,8 @@
 import { create } from "zustand";
 
 import { persist } from "zustand/middleware";
+import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/store/auth-store";
 
 export type NoteLink = {
   targetNoteId: string;
@@ -129,8 +131,8 @@ type NotesState = {
     noteId: string
   ) => Note[];
 
-  recalculateAnalytics:
-    () => void;
+  recalculateAnalytics: () => void;
+  syncNotes: (userId: string) => Promise<void>;
 };
 
 function stripHtml(
@@ -185,7 +187,7 @@ const starterWords =
   );
 
 const starterNote: Note = {
-  id: `${Date.now()}-${Math.random()}`,
+  id: crypto.randomUUID(),
 
   title:
     "Welcome to corTeX.ai",
@@ -236,6 +238,30 @@ const starterNote: Note = {
     Date.now(),
 };
 
+
+const _syncNoteToSupabase = async (note: Note) => {
+  const user = useAuthStore.getState().user;
+  if (!user?.id) return;
+  try {
+    await supabase.from('notes').upsert({
+      id: note.id,
+      user_id: user.id,
+      title: note.title,
+      content: note.content,
+      plain_text: note.plainText,
+      tags: note.tags,
+      category: note.category,
+      archived: note.archived,
+      favorite: note.favorite,
+      pinned: note.pinned,
+      created_at: note.createdAt,
+      updated_at: note.updatedAt
+    });
+  } catch (e) {
+    console.error("Failed to sync note to Supabase", e);
+  }
+};
+
 export const useNotesStore =
   create<NotesState>()(
     persist(
@@ -262,6 +288,37 @@ export const useNotesStore =
 
           averageWordsPerNote:
             starterWords,
+        },
+        
+        syncNotes: async (userId) => {
+          try {
+            const { data, error } = await supabase.from('notes').select('*').eq('user_id', userId);
+            if (data && !error) {
+              const parsedNotes: Note[] = data.map(n => ({
+                id: n.id,
+                title: n.title,
+                content: n.content,
+                plainText: n.plain_text,
+                createdAt: n.created_at,
+                updatedAt: n.updated_at,
+                favorite: n.favorite || false,
+                pinned: n.pinned || false,
+                archived: n.archived || false,
+                category: n.category || "General",
+                tags: n.tags || [],
+                backlinks: [],
+                outgoingLinks: [],
+                wordCount: calculateWordCount(n.plain_text || ""),
+                readingTime: calculateReadingTime(calculateWordCount(n.plain_text || "")),
+                aiGenerated: false,
+                lastOpenedAt: n.updated_at
+              }));
+              set({ notes: parsedNotes });
+              get().recalculateAnalytics();
+            }
+          } catch (e) {
+            console.error(e);
+          }
         },
 
         createNote: (
@@ -348,6 +405,8 @@ export const useNotesStore =
             activeNoteId:
               note.id,
           });
+          
+          _syncNoteToSupabase(note);
 
           get()
             .recalculateAnalytics();
@@ -369,6 +428,11 @@ export const useNotesStore =
               filtered[0]
                 ?.id || null,
           });
+          
+          const user = useAuthStore.getState().user;
+          if (user?.id) {
+            supabase.from('notes').delete().eq('id', id).then();
+          }
 
           get()
             .recalculateAnalytics();
@@ -395,6 +459,8 @@ export const useNotesStore =
                     : note
               ),
           });
+          const _updatedNote = get().notes.find(n => n.id === id);
+          if (_updatedNote) _syncNoteToSupabase(_updatedNote);
 
           get()
             .recalculateAnalytics();
@@ -426,59 +492,71 @@ export const useNotesStore =
             .recalculateAnalytics();
         },
 
-        updateNote: (
-          id,
-          updates
-        ) => {
-          set({
-            notes:
-              get().notes.map(
-                (note) => {
-                  if (
-                    note.id !==
-                    id
-                  ) {
-                    return note;
-                  }
+        updateNote: (id, updates) => {
+          set((state) => {
+            const currentNote = state.notes.find(n => n.id === id);
+            if (!currentNote) return state;
 
-                  const content =
-                    updates.content ??
-                    note.content;
+            const content = updates.content ?? currentNote.content;
+            const plainText = stripHtml(content);
+            const words = calculateWordCount(plainText);
 
-                  const plainText =
-                    stripHtml(
-                      content
-                    );
+            // 1. Extract [[Links]]
+            const linkRegex = /\[\[(.*?)\]\]/g;
+            const matches = [...plainText.matchAll(linkRegex)];
+            const linkedTitles = matches.map(m => m[1].trim().toLowerCase());
 
-                  const words =
-                    calculateWordCount(
-                      plainText
-                    );
+            // 2. Identify target notes
+            const targetNoteIds = state.notes
+              .filter(n => n.id !== id && linkedTitles.includes(n.title.trim().toLowerCase()))
+              .map(n => n.id);
 
+            // 3. Rebuild notes array to update source and targets
+            const updatedNotes = state.notes.map(note => {
+              if (note.id === id) {
+                // Update source note
+                const newOutgoingLinks = targetNoteIds.map(targetId => ({
+                  targetNoteId: targetId,
+                  createdAt: Date.now()
+                }));
+                return {
+                  ...note,
+                  ...updates,
+                  plainText,
+                  wordCount: words,
+                  readingTime: calculateReadingTime(words),
+                  updatedAt: Date.now(),
+                  outgoingLinks: newOutgoingLinks
+                };
+              } else if (targetNoteIds.includes(note.id)) {
+                // Update target note (add backlink if not exists)
+                const hasBacklink = note.backlinks?.some(b => b.targetNoteId === id);
+                if (!hasBacklink) {
                   return {
                     ...note,
-
-                    ...updates,
-
-                    plainText,
-
-                    wordCount:
-                      words,
-
-                    readingTime:
-                      calculateReadingTime(
-                        words
-                      ),
-
-                    updatedAt:
-                      Date.now(),
+                    backlinks: [...(note.backlinks || []), { targetNoteId: id, createdAt: Date.now() }]
                   };
                 }
-              ),
+              } else {
+                // Remove outdated backlinks from other notes that were previously linked but aren't anymore
+                if (note.backlinks?.some(b => b.targetNoteId === id)) {
+                   return {
+                     ...note,
+                     backlinks: note.backlinks.filter(b => b.targetNoteId !== id)
+                   };
+                }
+              }
+              return note;
+            });
+
+            // Trigger sync for the source note asynchronously
+            const _updatedSource = updatedNotes.find(n => n.id === id);
+            if (_updatedSource) _syncNoteToSupabase(_updatedSource);
+
+            return { notes: updatedNotes };
           });
 
-          get()
-            .recalculateAnalytics();
+          get().recalculateAnalytics();
         },
 
         setActiveNote: (
@@ -669,6 +747,10 @@ export const useNotesStore =
                 }
               ),
           });
+          const _source = get().notes.find(n => n.id === sourceId);
+          const _target = get().notes.find(n => n.id === targetId);
+          if (_source) _syncNoteToSupabase(_source);
+          if (_target) _syncNoteToSupabase(_target);
         },
 
         searchNotes: (

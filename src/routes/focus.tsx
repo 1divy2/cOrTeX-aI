@@ -354,20 +354,12 @@ function FocusPage() {
             completedAt:
               Date.now(),
 
-            productivity:
-              Math.floor(
-                70 +
-                  Math.random() *
-                    30
-              ),
-
-            mode:
-              "focus",
-
-            id:
-              crypto.randomUUID(),
+            productivity: Math.max(0, 100 - ((useSettingsStore.getState().interruptionCount || 0) * 15)),
+            mode: "focus",
+            id: crypto.randomUUID(),
           }
         );
+        useSettingsStore.setState({ interruptionCount: 0 });
 
         if (
           soundEffects

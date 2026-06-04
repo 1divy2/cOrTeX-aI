@@ -8,7 +8,7 @@ import {
 
 import { supabase } from "@/lib/supabase";
 
-import { auth } from "@/firebase/config";
+import { useAuthStore } from "@/store/auth-store";
 
 export type FocusSession = {
   id: string;
@@ -341,13 +341,13 @@ export const useProductivityStore =
             });
 
             const user =
-              auth.currentUser;
+              useAuthStore.getState().user;
 
             if (
-              user?.uid
+              user?.id
             ) {
               get().syncMetrics(
-                user.uid
+                user.id
               );
             }
           },
@@ -362,13 +362,13 @@ export const useProductivityStore =
             });
 
             const user =
-              auth.currentUser;
+              useAuthStore.getState().user;
 
             if (
-              user?.uid
+              user?.id
             ) {
               get().syncMetrics(
-                user.uid
+                user.id
               );
             }
           },
@@ -392,13 +392,13 @@ export const useProductivityStore =
             });
 
             const user =
-              auth.currentUser;
+              useAuthStore.getState().user;
 
             if (
-              user?.uid
+              user?.id
             ) {
               get().syncMetrics(
-                user.uid
+                user.id
               );
             }
           },

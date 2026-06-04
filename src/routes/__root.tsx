@@ -203,37 +203,7 @@ export const Route =
       ErrorComponent,
   });
 
-function ThemeController() {
-  const {
-    theme,
-  } =
-    useSettingsStore();
-
-  useEffect(() => {
-    const body =
-      document.body;
-
-    body.classList.remove(
-      "theme-dark",
-      "theme-midnight"
-    );
-
-    if (
-      theme ===
-      "midnight"
-    ) {
-      body.classList.add(
-        "theme-midnight"
-      );
-    } else {
-      body.classList.add(
-        "theme-dark"
-      );
-    }
-  }, [theme]);
-
-  return null;
-}
+import ThemeManager from "@/components/workspace/ThemeManager";
 
 function RootShell({
   children,
@@ -255,15 +225,7 @@ function RootShell({
 
 </head>
 
-      <body className="bg-background text-white antialiased transition-colors duration-500">
-
-        <div className="fixed inset-0 -z-10 overflow-hidden">
-
-          <div className="absolute left-[-10%] top-[-10%] h-[500px] w-[500px] rounded-full bg-purple-500/10 blur-3xl" />
-
-          <div className="absolute bottom-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full bg-cyan-500/10 blur-3xl" />
-
-        </div>
+      <body className="bg-background text-foreground antialiased transition-colors duration-500">
 
         {children}
 
@@ -275,6 +237,10 @@ function RootShell({
   );
 }
 
+import NotificationCenter from "@/components/ui/NotificationCenter";
+
+import QuickCapture from "@/components/notes/QuickCapture";
+
 function RootComponent() {
   const { queryClient } =
     Route.useRouteContext();
@@ -284,7 +250,7 @@ function RootComponent() {
       client={queryClient}
     >
 
-      <ThemeController />
+      <ThemeManager />
 
      <>
   <ScrollRestoration />
@@ -292,6 +258,8 @@ function RootComponent() {
   <Outlet />
 
   <CommandPalette />
+  <NotificationCenter />
+  <QuickCapture />
 </>
 
     </QueryClientProvider>

@@ -1,907 +1,378 @@
 import { createFileRoute } from "@tanstack/react-router";
-
-import {
-  User,
-  Moon,
-  Timer,
-  Sparkles,
-  Shield,
-  Brain,
-  Laptop,
-  Trash2,
-  Download,
-  Upload,
-  Check,
-} from "lucide-react";
-
-import {
-  useRef,
-  useState,
-} from "react";
-
+import { User, Moon, Timer, Sparkles, Shield, Brain, Laptop, Trash2, Download, Upload, Check, ChevronRight } from "lucide-react";
+import { useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import WorkspaceSidebar from "@/components/workspace/WorkspaceSidebar";
-
 import WorkspaceHeader from "@/components/workspace/WorkspaceHeader";
+import { useSettingsStore } from "@/store/settings-store";
+import { useWorkspaceStore } from "@/store/workspace-store";
 
-import {
-  useSettingsStore,
-} from "@/store/settings-store";
+export const Route = createFileRoute("/settings")({
+  component: SettingsPage,
+});
 
-export const Route =
-  createFileRoute("/settings")({
-    component: SettingsPage,
-  });
+const TABS = [
+  { id: "account", label: "Account", icon: User },
+  { id: "appearance", label: "Appearance", icon: Moon },
+  { id: "productivity", label: "Productivity", icon: Timer },
+  { id: "ai", label: "AI Preferences", icon: Brain },
+  { id: "workspace", label: "Workspace", icon: Laptop },
+  { id: "data", label: "Data Management", icon: Shield },
+];
 
 function SettingsPage() {
+  const { sidebarCollapsed } = useWorkspaceStore();
   const {
     username,
     theme,
     focusDuration,
     breakDuration,
     dailyGoalHours,
-
     compactSidebar,
     ambientMode,
     soundEffects,
-
     notifications,
     language,
-    accentColor,
-
     updateUsername,
     setTheme,
     setFocusDuration,
     setBreakDuration,
     setDailyGoalHours,
-
     toggleCompactSidebar,
     toggleAmbientMode,
     toggleSoundEffects,
     toggleNotifications,
-
-    setAccentColor,
     setLanguage,
-  } =
-    useSettingsStore();
+  } = useSettingsStore();
 
-  const [
-    aiMemory,
-    setAiMemory,
-  ] = useState(true);
+  const [aiMemory, setAiMemory] = useState(true);
+  const [autoSave, setAutoSave] = useState(true);
+  const [analytics, setAnalytics] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("");
+  const [activeTab, setActiveTab] = useState("appearance");
+  const fileRef = useRef<HTMLInputElement>(null);
 
-  const [
-    autoSave,
-    setAutoSave,
-  ] = useState(true);
-
-  const [
-    analytics,
-    setAnalytics,
-  ] = useState(false);
-
-  const [
-    saveStatus,
-    setSaveStatus,
-  ] = useState("");
-
-  const fileRef =
-    useRef<HTMLInputElement>(
-      null
-    );
-
-  const exportData =
-    () => {
-      const data = {
-        username,
-        theme,
-        focusDuration,
-        breakDuration,
-        dailyGoalHours,
-        compactSidebar,
-        ambientMode,
-        soundEffects,
-        notifications,
-        language,
-        accentColor,
-      };
-
-      const blob =
-        new Blob(
-          [
-            JSON.stringify(
-              data,
-              null,
-              2
-            ),
-          ],
-          {
-            type: "application/json",
-          }
-        );
-
-      const url =
-        URL.createObjectURL(
-          blob
-        );
-
-      const a =
-        document.createElement(
-          "a"
-        );
-
-      a.href = url;
-
-      a.download =
-        "coretex-settings.json";
-
-      a.click();
-
-      URL.revokeObjectURL(
-        url
-      );
-
-      setSaveStatus(
-        "Settings exported"
-      );
-
-      setTimeout(() => {
-        setSaveStatus("");
-      }, 2500);
+  const exportData = () => {
+    const data = {
+      username,
+      theme,
+      focusDuration,
+      breakDuration,
+      dailyGoalHours,
+      compactSidebar,
+      ambientMode,
+      soundEffects,
+      notifications,
+      language,
     };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "coretex-settings.json";
+    a.click();
+    URL.revokeObjectURL(url);
+    setSaveStatus("Settings exported");
+    setTimeout(() => setSaveStatus(""), 2500);
+  };
 
-  const importData =
-    (
-      e: React.ChangeEvent<HTMLInputElement>
-    ) => {
-      const file =
-        e.target.files?.[0];
-
-      if (!file) return;
-
-      const reader =
-        new FileReader();
-
-      reader.onload =
-        (
-          event
-        ) => {
-          try {
-            const parsed =
-              JSON.parse(
-                event
-                  .target
-                  ?.result as string
-              );
-
-            if (
-              parsed.username
-            )
-              updateUsername(
-                parsed.username
-              );
-
-            if (
-              parsed.theme
-            )
-              setTheme(
-                parsed.theme
-              );
-
-            if (
-              parsed.focusDuration
-            )
-              setFocusDuration(
-                parsed.focusDuration
-              );
-
-            if (
-              parsed.breakDuration
-            )
-              setBreakDuration(
-                parsed.breakDuration
-              );
-
-            if (
-              parsed.dailyGoalHours
-            )
-              setDailyGoalHours(
-                parsed.dailyGoalHours
-              );
-
-            if (
-              parsed.language
-            )
-              setLanguage(
-                parsed.language
-              );
-
-            if (
-              parsed.accentColor
-            )
-              setAccentColor(
-                parsed.accentColor
-              );
-
-            setSaveStatus(
-              "Settings imported"
-            );
-
-            setTimeout(() => {
-              setSaveStatus(
-                ""
-              );
-            }, 2500);
-          } catch {
-            setSaveStatus(
-              "Invalid settings file"
-            );
-          }
-        };
-
-      reader.readAsText(
-        file
-      );
+  const importData = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target?.result as string);
+        if (parsed.username) updateUsername(parsed.username);
+        if (parsed.theme) setTheme(parsed.theme);
+        if (parsed.focusDuration) setFocusDuration(parsed.focusDuration);
+        if (parsed.breakDuration) setBreakDuration(parsed.breakDuration);
+        if (parsed.dailyGoalHours) setDailyGoalHours(parsed.dailyGoalHours);
+        if (parsed.language) setLanguage(parsed.language);
+        
+        setSaveStatus("Settings imported");
+        setTimeout(() => setSaveStatus(""), 2500);
+      } catch {
+        setSaveStatus("Invalid settings file");
+      }
     };
+    reader.readAsText(file);
+  };
 
-  const resetWorkspace =
-    () => {
-      localStorage.clear();
-
-      location.reload();
-    };
+  const resetWorkspace = () => {
+    localStorage.clear();
+    location.reload();
+  };
 
   return (
-    <div className="min-h-screen overflow-hidden bg-[#050816] text-white">
-
+    <div className="min-h-screen overflow-hidden bg-background text-foreground transition-colors duration-500">
       <WorkspaceSidebar />
-
-      <div className="relative z-10 ml-[84px] lg:ml-[280px]">
-
+      <motion.div
+        className="relative z-10"
+        animate={{ marginLeft: sidebarCollapsed ? 96 : 280 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+      >
         <WorkspaceHeader />
-
         <main className="relative h-screen overflow-y-auto pt-28">
-
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.14),transparent_25%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.10),transparent_25%)]" />
-
-          <div className="relative z-10 mx-auto max-w-[1800px] px-8 pb-28">
-
-            <section className="rounded-[40px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
-
-              <div className="flex items-center justify-between">
-
-                <div>
-
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-zinc-300">
-
-                    <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-
-                    Workspace Configuration
-
-                  </div>
-
-                  <h1 className="mt-6 text-6xl font-black leading-[0.95] tracking-tight">
-
-                    Settings
-
-                    <br />
-
-                    <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
-
-                      control center
-
-                    </span>
-
-                  </h1>
-
+          <div className="relative z-10 mx-auto max-w-[1200px] px-8 pb-28">
+            <section className="mb-10 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary px-4 py-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                  <Sparkles className="h-3.5 w-3.5 text-accent" />
+                  Configuration
                 </div>
-
-                <div className="rounded-3xl border border-white/10 bg-black/20 px-6 py-5">
-
-                  <p className="text-sm text-zinc-500">
-
-                    System Status
-
-                  </p>
-
-                  <h3 className="mt-2 text-3xl font-black text-emerald-400">
-
-                    Operational
-
-                  </h3>
-
-                  {saveStatus && (
-                    <p className="mt-3 text-sm text-cyan-300">
-
-                      {saveStatus}
-
-                    </p>
-                  )}
-
-                </div>
-
+                <h1 className="mt-4 text-5xl font-display font-bold leading-[0.95] tracking-tight text-foreground">
+                  Workspace <span className="italic text-accent">settings</span>
+                </h1>
               </div>
-
+              {saveStatus && (
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="rounded-xl border border-border bg-secondary px-6 py-3 font-bold text-accent">
+                  {saveStatus}
+                </motion.div>
+              )}
             </section>
 
-            <div className="mt-8 grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+            <div className="flex flex-col gap-10 lg:flex-row">
+              {/* Sidebar Navigation */}
+              <aside className="w-full shrink-0 lg:w-64">
+                <nav className="flex flex-row gap-2 overflow-x-auto lg:flex-col lg:overflow-visible">
+                  {TABS.map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center justify-between whitespace-nowrap rounded-xl px-4 py-3 text-sm font-bold transition-all duration-300 ${
+                        activeTab === tab.id
+                          ? "bg-foreground text-background shadow-sm"
+                          : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? "text-background" : "text-muted-foreground"}`} />
+                        {tab.label}
+                      </div>
+                      {activeTab === tab.id && <ChevronRight className="hidden h-4 w-4 lg:block" />}
+                    </button>
+                  ))}
+                </nav>
+              </aside>
 
-              <div className="space-y-6">
+              {/* Settings Content */}
+              <div className="flex-1 min-w-0">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeTab}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="space-y-6"
+                  >
+                    {activeTab === "account" && (
+                      <SettingsCard icon={User} title="Profile" desc="Identity and personalization">
+                        <div className="mt-6 space-y-5">
+                          <InputRow label="Username" value={username} onChange={updateUsername} />
+                          <SelectRow label="Language" value={language} onChange={setLanguage} options={["English", "Japanese", "German", "French"]} />
+                        </div>
+                      </SettingsCard>
+                    )}
 
-                <SettingsCard
-                  icon={User}
-                  title="Profile"
-                  desc="Identity and personalization"
-                >
+                    {activeTab === "appearance" && (
+                      <SettingsCard icon={Moon} title="Appearance" desc="Theme and visual controls">
+                        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {["light", "dark", "system"].map((mode) => (
+                            <ThemeCard key={mode} active={theme === mode} title={mode} onClick={() => setTheme(mode as any)} />
+                          ))}
+                        </div>
+                      </SettingsCard>
+                    )}
 
-                  <div className="mt-6 space-y-5">
+                    {activeTab === "productivity" && (
+                      <SettingsCard icon={Timer} title="Focus Sessions" desc="Deep work timing controls">
+                        <div className="mt-6 space-y-8">
+                          <SliderInput label="Focus Duration" value={focusDuration} suffix="min" min={15} max={120} onChange={setFocusDuration} />
+                          <SliderInput label="Break Duration" value={breakDuration} suffix="min" min={5} max={45} onChange={setBreakDuration} />
+                          <SliderInput label="Daily Goal" value={dailyGoalHours} suffix="hrs" min={1} max={12} onChange={setDailyGoalHours} />
+                        </div>
+                      </SettingsCard>
+                    )}
 
-                    <InputRow
-                      label="Username"
-                      value={username}
-                      onChange={
-                        updateUsername
-                      }
-                    />
+                    {activeTab === "ai" && (
+                      <SettingsCard icon={Brain} title="AI Preferences" desc="AI system controls">
+                        <div className="mt-6 space-y-4">
+                          <ToggleRow label="AI Memory" enabled={aiMemory} onToggle={() => setAiMemory(!aiMemory)} />
+                          <ToggleRow label="Auto Save Insights" enabled={autoSave} onToggle={() => setAutoSave(!autoSave)} />
+                          <ToggleRow label="Advanced Analytics" enabled={analytics} onToggle={() => setAnalytics(!analytics)} />
+                        </div>
+                      </SettingsCard>
+                    )}
 
-                    <SelectRow
-                      label="Language"
-                      value={language}
-                      onChange={
-                        setLanguage
-                      }
-                      options={[
-                        "English",
-                        "Japanese",
-                        "German",
-                        "French",
-                      ]}
-                    />
+                    {activeTab === "workspace" && (
+                      <SettingsCard icon={Laptop} title="Workspace" desc="Desktop experience">
+                        <div className="mt-6 space-y-4">
+                          <ToggleRow label="Compact Sidebar" enabled={compactSidebar} onToggle={toggleCompactSidebar} />
+                          <ToggleRow label="Ambient Texture" enabled={ambientMode} onToggle={toggleAmbientMode} />
+                          <ToggleRow label="Sound Effects" enabled={soundEffects} onToggle={toggleSoundEffects} />
+                          <ToggleRow label="Notifications" enabled={notifications} onToggle={toggleNotifications} />
+                        </div>
+                      </SettingsCard>
+                    )}
 
-                  </div>
-
-                </SettingsCard>
-
-                <SettingsCard
-                  icon={Moon}
-                  title="Appearance"
-                  desc="Theme and visual controls"
-                >
-
-                  <div className="mt-6 grid grid-cols-3 gap-4">
-
-                    {[
-                      "dark",
-                      "midnight",
-                      "system",
-                    ].map((mode) => (
-                      <ThemeCard
-                        key={mode}
-                        active={
-                          theme === mode
-                        }
-                        title={mode}
-                        onClick={() =>
-                          setTheme(
-                            mode as any
-                          )
-                        }
-                      />
-                    ))}
-
-                  </div>
-
-                  <div className="mt-8">
-
-                    <p className="mb-4 text-sm text-zinc-400">
-
-                      Accent Color
-
-                    </p>
-
-                    <div className="flex flex-wrap gap-3">
-
-                      {[
-                        "Purple",
-                        "Cyan",
-                        "Pink",
-                        "Emerald",
-                      ].map(
-                        (
-                          item
-                        ) => (
-                          <button
-                            key={item}
-                            onClick={() =>
-                              setAccentColor(
-                                item
-                              )
-                            }
-                            className={`rounded-2xl border px-4 py-3 text-sm transition-all duration-300 ${
-                              accentColor ===
-                              item
-                                ? "border-purple-500/30 bg-purple-500/10 text-white shadow-[0_0_25px_rgba(168,85,247,0.25)]"
-                                : "border-white/10 bg-white/[0.03] text-zinc-400 hover:bg-white/[0.06]"
-                            }`}
-                          >
-
-                            {item}
-
+                    {activeTab === "data" && (
+                      <SettingsCard icon={Shield} title="Data Management" desc="Import export and reset">
+                        <div className="mt-6 space-y-4">
+                          <button onClick={exportData} className="group flex w-full items-center justify-between rounded-xl border border-border bg-secondary px-5 py-4 font-bold transition-all hover:border-accent hover:bg-background">
+                            <div className="flex items-center gap-3 text-foreground">
+                              <Download className="h-5 w-5 text-accent" />
+                              Export Settings
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                           </button>
-                        )
-                      )}
-
-                    </div>
-
-                  </div>
-
-                </SettingsCard>
-
-                <SettingsCard
-                  icon={Timer}
-                  title="Focus Sessions"
-                  desc="Deep work timing controls"
-                >
-
-                  <div className="mt-6 space-y-8">
-
-                    <SliderInput
-                      label="Focus Duration"
-                      value={
-                        focusDuration
-                      }
-                      suffix="min"
-                      min={15}
-                      max={120}
-                      onChange={
-                        setFocusDuration
-                      }
-                    />
-
-                    <SliderInput
-                      label="Break Duration"
-                      value={
-                        breakDuration
-                      }
-                      suffix="min"
-                      min={5}
-                      max={45}
-                      onChange={
-                        setBreakDuration
-                      }
-                    />
-
-                    <SliderInput
-                      label="Daily Goal"
-                      value={
-                        dailyGoalHours
-                      }
-                      suffix="hrs"
-                      min={1}
-                      max={12}
-                      onChange={
-                        setDailyGoalHours
-                      }
-                    />
-
-                  </div>
-
-                </SettingsCard>
-
+                          <button onClick={() => fileRef.current?.click()} className="group flex w-full items-center justify-between rounded-xl border border-border bg-secondary px-5 py-4 font-bold transition-all hover:border-accent hover:bg-background">
+                            <div className="flex items-center gap-3 text-foreground">
+                              <Upload className="h-5 w-5 text-accent" />
+                              Import Settings
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+                          </button>
+                          <input ref={fileRef} type="file" accept=".json" hidden onChange={importData} />
+                          
+                          <div className="my-6 h-px w-full bg-border" />
+                          
+                          <button onClick={resetWorkspace} className="flex w-full items-center gap-3 rounded-xl border border-red-500/20 bg-red-500/10 px-5 py-4 font-bold text-red-600 transition-all hover:bg-red-500/20">
+                            <Trash2 className="h-5 w-5" />
+                            Reset Workspace
+                          </button>
+                        </div>
+                      </SettingsCard>
+                    )}
+                  </motion.div>
+                </AnimatePresence>
               </div>
-
-              <div className="space-y-6">
-
-                <SettingsCard
-                  icon={Brain}
-                  title="AI Preferences"
-                  desc="AI system controls"
-                >
-
-                  <div className="mt-6 space-y-4">
-
-                    <ToggleRow
-                      label="AI Memory"
-                      enabled={
-                        aiMemory
-                      }
-                      onToggle={() =>
-                        setAiMemory(
-                          !aiMemory
-                        )
-                      }
-                    />
-
-                    <ToggleRow
-                      label="Auto Save"
-                      enabled={
-                        autoSave
-                      }
-                      onToggle={() =>
-                        setAutoSave(
-                          !autoSave
-                        )
-                      }
-                    />
-
-                    <ToggleRow
-                      label="Analytics Sharing"
-                      enabled={
-                        analytics
-                      }
-                      onToggle={() =>
-                        setAnalytics(
-                          !analytics
-                        )
-                      }
-                    />
-
-                  </div>
-
-                </SettingsCard>
-
-                <SettingsCard
-                  icon={Laptop}
-                  title="Workspace"
-                  desc="Desktop experience"
-                >
-
-                  <div className="mt-6 space-y-4">
-
-                    <ToggleRow
-                      label="Compact Sidebar"
-                      enabled={
-                        compactSidebar
-                      }
-                      onToggle={
-                        toggleCompactSidebar
-                      }
-                    />
-
-                    <ToggleRow
-                      label="Ambient Mode"
-                      enabled={
-                        ambientMode
-                      }
-                      onToggle={
-                        toggleAmbientMode
-                      }
-                    />
-
-                    <ToggleRow
-                      label="Sound Effects"
-                      enabled={
-                        soundEffects
-                      }
-                      onToggle={
-                        toggleSoundEffects
-                      }
-                    />
-
-                    <ToggleRow
-                      label="Notifications"
-                      enabled={
-                        notifications
-                      }
-                      onToggle={
-                        toggleNotifications
-                      }
-                    />
-
-                  </div>
-
-                </SettingsCard>
-
-                <SettingsCard
-                  icon={Shield}
-                  title="Data Management"
-                  desc="Import export and reset"
-                >
-
-                  <div className="mt-6 space-y-4">
-
-                    <button
-                      onClick={
-                        exportData
-                      }
-                      className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 transition hover:bg-white/[0.06]"
-                    >
-
-                      <Download className="h-5 w-5 text-cyan-300" />
-
-                      Export Settings
-
-                    </button>
-
-                    <button
-                      onClick={() =>
-                        fileRef.current?.click()
-                      }
-                      className="flex w-full items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 transition hover:bg-white/[0.06]"
-                    >
-
-                      <Upload className="h-5 w-5 text-purple-300" />
-
-                      Import Settings
-
-                    </button>
-
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept=".json"
-                      hidden
-                      onChange={
-                        importData
-                      }
-                    />
-
-                    <button
-                      onClick={
-                        resetWorkspace
-                      }
-                      className="flex w-full items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/10 px-5 py-4 text-red-300 transition hover:bg-red-500/20"
-                    >
-
-                      <Trash2 className="h-5 w-5" />
-
-                      Reset Workspace
-
-                    </button>
-
-                  </div>
-
-                </SettingsCard>
-
-              </div>
-
             </div>
-
           </div>
-
         </main>
-
-      </div>
-
+      </motion.div>
     </div>
   );
 }
 
-function SettingsCard({
-  icon: Icon,
-  title,
-  desc,
-  children,
-}: any) {
+function SettingsCard({ icon: Icon, title, desc, children }: any) {
   return (
-    <div className="rounded-[32px] border border-white/10 bg-white/[0.03] p-7 backdrop-blur-3xl">
-
-      <div className="flex items-start gap-4">
-
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/10">
-
-          <Icon className="h-6 w-6 text-purple-300" />
-
+    <div className="paper-panel rounded-[24px] border border-border p-8 shadow-sm">
+      <div className="flex items-center gap-4">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-background border border-border">
+          <Icon className="h-5 w-5 text-accent" />
         </div>
-
         <div>
-
-          <h2 className="text-2xl font-bold text-white">
-
-            {title}
-
-          </h2>
-
-          <p className="mt-1 text-sm text-zinc-500">
-
-            {desc}
-
-          </p>
-
+          <h2 className="text-2xl font-display font-bold text-foreground">{title}</h2>
+          <p className="mt-1 text-sm font-medium text-muted-foreground">{desc}</p>
         </div>
-
       </div>
-
       {children}
-
     </div>
   );
 }
 
-function InputRow({
-  label,
-  value,
-  onChange,
-}: any) {
+function InputRow({ label, value, onChange }: any) {
   return (
     <div>
-      <label className="text-sm text-zinc-400">
-        {label}
-      </label>
-
+      <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{label}</label>
       <input
         value={value}
-        onChange={(e) =>
-          onChange(
-            e.target.value
-          )
-        }
-        className="mt-2 h-14 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-5 text-white outline-none"
+        onChange={(e) => onChange(e.target.value)}
+        className="mt-3 h-12 w-full rounded-xl border border-border bg-background px-4 font-semibold text-foreground outline-none transition-all focus:border-accent focus:ring-2 focus:ring-accent/20"
       />
     </div>
   );
 }
 
-function SelectRow({
-  label,
-  value,
-  onChange,
-  options,
-}: any) {
+function SelectRow({ label, value, onChange, options }: any) {
   return (
     <div>
-      <label className="text-sm text-zinc-400">
-        {label}
-      </label>
-
-      <select
-        value={value}
-        onChange={(e) =>
-          onChange(
-            e.target.value
-          )
-        }
-        className="mt-2 h-14 w-full rounded-2xl border border-white/10 bg-white/[0.03] px-5 text-white outline-none"
-      >
-        {options.map(
-          (item: string) => (
-            <option
-              key={item}
-            >
-              {item}
-            </option>
-          )
-        )}
-      </select>
+      <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{label}</label>
+      <div className="relative mt-3">
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="h-12 w-full appearance-none rounded-xl border border-border bg-background px-4 font-semibold text-foreground outline-none transition-all cursor-pointer focus:border-accent focus:ring-2 focus:ring-accent/20"
+        >
+          {options.map((item: string) => (
+            <option key={item}>{item}</option>
+          ))}
+        </select>
+        <ChevronRight className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 rotate-90 text-muted-foreground" />
+      </div>
     </div>
   );
 }
 
-function ThemeCard({
-  title,
-  active,
-  onClick,
-}: any) {
+function ThemeCard({ title, active, onClick }: any) {
   return (
     <button
       onClick={onClick}
-      className={`rounded-3xl border p-5 transition-all duration-300 ${
+      className={`group rounded-xl border p-5 text-left transition-all duration-300 ${
         active
-          ? "border-purple-500/30 bg-purple-500/10 shadow-[0_0_25px_rgba(168,85,247,0.25)]"
-          : "border-white/10 bg-white/[0.03]"
+          ? "border-accent bg-background shadow-md ring-1 ring-accent"
+          : "border-border bg-secondary hover:border-accent/50 hover:bg-background"
       }`}
     >
-      <div className="mb-5 flex gap-2">
-        <div className="h-3 w-3 rounded-full bg-purple-400" />
-        <div className="h-3 w-3 rounded-full bg-pink-400" />
-        <div className="h-3 w-3 rounded-full bg-cyan-400" />
-      </div>
-
       <div className="flex items-center justify-between">
-        <span className="capitalize text-white">
-          {title}
-        </span>
-
-        {active && (
-          <Check className="h-4 w-4 text-purple-300" />
-        )}
+        <span className="font-bold capitalize text-foreground group-hover:text-accent transition-colors">{title}</span>
+        {active && <Check className="h-5 w-5 text-accent" />}
       </div>
     </button>
   );
 }
 
-function SliderInput({
-  label,
-  value,
-  suffix,
-  min,
-  max,
-  onChange,
-}: any) {
-  const percentage =
-    ((value - min) /
-      (max - min)) *
-    100;
-
+function SliderInput({ label, value, suffix, min, max, onChange }: any) {
+  const percentage = ((value - min) / (max - min)) * 100;
   return (
     <div className="space-y-4">
-
       <div className="flex items-center justify-between">
-
-        <label className="text-sm font-medium text-zinc-300">
-          {label}
-        </label>
-
-        <div className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1 text-sm font-semibold text-white">
+        <label className="text-sm font-bold uppercase tracking-wider text-muted-foreground">{label}</label>
+        <div className="rounded-lg border border-border bg-background px-3 py-1 text-sm font-bold text-foreground">
           {value} {suffix}
         </div>
-
       </div>
-
-      <div className="relative flex items-center">
-
-        <div className="absolute h-2 w-full rounded-full bg-white/5" />
-
-        <div
-          className="absolute h-2 rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400"
-          style={{
-            width: `${percentage}%`,
-          }}
-        />
-
+      <div className="relative flex items-center py-2">
+        <div className="absolute h-2 w-full rounded-full bg-border" />
+        <div className="absolute h-2 rounded-full bg-foreground transition-all" style={{ width: `${percentage}%` }} />
         <input
           type="range"
           min={min}
           max={max}
           value={value}
-          onChange={(e) =>
-            onChange(
-              Number(
-                e.target.value
-              )
-            )
-          }
-          className="relative z-10 h-2 w-full cursor-pointer appearance-none bg-transparent"
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="relative z-10 h-2 w-full cursor-pointer appearance-none bg-transparent opacity-0 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:appearance-none"
         />
-
+        <div 
+          className="absolute h-5 w-5 -translate-x-1/2 rounded-full border-2 border-foreground bg-background shadow-md transition-shadow hover:shadow-lg"
+          style={{ left: `${percentage}%` }}
+        />
       </div>
-
     </div>
   );
 }
 
-function ToggleRow({
-  label,
-  enabled,
-  onToggle,
-}: any) {
+function ToggleRow({ label, enabled, onToggle }: any) {
   return (
-    <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4">
-
+    <button
+      type="button"
+      onClick={onToggle}
+      className="group flex w-full items-center justify-between rounded-xl border border-border bg-secondary px-5 py-4 transition-all hover:bg-background hover:border-accent/50 text-left"
+    >
       <div>
-
-        <p className="text-sm font-semibold text-white">
-          {label}
-        </p>
-
-        <p className="mt-1 text-xs text-zinc-500">
-          {enabled
-            ? "Enabled"
-            : "Disabled"}
-        </p>
-
+        <p className="font-bold text-foreground group-hover:text-accent transition-colors">{label}</p>
+        <p className="mt-1 text-xs font-medium text-muted-foreground">{enabled ? "Enabled" : "Disabled"}</p>
       </div>
-
-      <button
-        type="button"
-        onClick={onToggle}
-        className={`relative flex h-7 w-14 items-center rounded-full transition-all duration-300 ${
-          enabled
-            ? "bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400"
-            : "bg-white/10"
+      <div
+        className={`relative flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${
+          enabled ? "bg-accent" : "bg-border"
         }`}
       >
-
-        <div
-          className={`absolute h-5 w-5 rounded-full bg-white transition-all duration-300 ${
-            enabled
-              ? "translate-x-8"
-              : "translate-x-1"
-          }`}
-        />
-
-      </button>
-
-    </div>
+        <div className={`absolute h-4 w-4 rounded-full bg-background transition-transform duration-300 ${enabled ? "translate-x-6" : "translate-x-1"}`} />
+      </div>
+    </button>
   );
 }
 

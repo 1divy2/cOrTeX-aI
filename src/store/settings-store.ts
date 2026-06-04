@@ -1,11 +1,10 @@
 import { create } from "zustand";
 
 import { persist } from "zustand/middleware";
+import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/store/auth-store";
 
-export type ThemeMode =
-  | "dark"
-  | "midnight"
-  | "system";
+export type ThemeMode = "light" | "dark" | "system";
 
 type SettingsState = {
   username: string;
@@ -110,18 +109,48 @@ type SettingsState = {
     session: SettingsState["activeSession"]
   ) => void;
 
-  completeSession:
-    () => void;
+  completeSession: () => void;
+  syncSettings: (userId: string) => Promise<void>;
+};
+
+
+const _syncSettingsToSupabase = async (state: SettingsState) => {
+  const user = useAuthStore.getState().user;
+  if (!user?.id) return;
+  try {
+    await supabase.from('settings').upsert({
+      user_id: user.id,
+      username: state.username,
+      theme: state.theme,
+      focus_duration: state.focusDuration,
+      break_duration: state.breakDuration,
+      daily_goal_hours: state.dailyGoalHours,
+      compact_sidebar: state.compactSidebar,
+      ambient_mode: state.ambientMode,
+      sound_effects: state.soundEffects,
+      notifications: state.notifications,
+      language: state.language,
+      updated_at: Date.now()
+    });
+  } catch (e) {
+    console.error("Failed to sync settings", e);
+  }
 };
 
 export const useSettingsStore =
   create<SettingsState>()(
     persist(
-      (set, get) => ({
+      (set, get) => {
+        const syncSet = (args) => {
+          set(args);
+          // Don't sync activeSession or temporary states, but it's fine since _syncSettingsToSupabase only saves the persistent keys
+          _syncSettingsToSupabase(get());
+        };
+        return {
         username:
           "Deep Worker",
 
-        theme: "dark",
+        theme: "system",
 
         focusDuration: 50,
 
@@ -159,6 +188,24 @@ export const useSettingsStore =
 
         activeSession: null,
 
+        syncSettings: async (userId) => {
+          const { data, error } = await supabase.from('settings').select('*').eq('user_id', userId).maybeSingle();
+          if (data && !error) {
+            set({
+              username: data.username || get().username,
+              theme: data.theme || get().theme,
+              focusDuration: data.focus_duration || get().focusDuration,
+              breakDuration: data.break_duration || get().breakDuration,
+              dailyGoalHours: data.daily_goal_hours || get().dailyGoalHours,
+              compactSidebar: data.compact_sidebar ?? get().compactSidebar,
+              ambientMode: data.ambient_mode ?? get().ambientMode,
+              soundEffects: data.sound_effects ?? get().soundEffects,
+              notifications: data.notifications ?? get().notifications,
+              language: data.language || get().language
+            });
+          }
+        },
+
         updateUsername: (
           username
         ) => {
@@ -170,11 +217,6 @@ export const useSettingsStore =
         setTheme: (
           theme
         ) => {
-          document.documentElement.setAttribute(
-            "data-theme",
-            theme
-          );
-
           set({
             theme,
           });
@@ -365,7 +407,8 @@ export const useSettingsStore =
                 25,
             });
           },
-      }),
+      };
+      },
       {
         name:
           "settings-storage",

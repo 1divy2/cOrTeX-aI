@@ -1,1753 +1,337 @@
 import { createFileRoute } from "@tanstack/react-router";
-
-import {
-  Brain,
-  Flame,
-  Sparkles,
-  TrendingUp,
-  Activity,
-  Clock3,
-  Target,
-  Zap,
-  CalendarDays,
-  Orbit,
-  BarChart3,
-  Gauge,
-} from "lucide-react";
-
-import {
-  motion,
-} from "framer-motion";
-
-
+import { Brain, Flame, Sparkles, TrendingUp, Orbit, BarChart3, Gauge, Target, Clock3, Activity, Zap, CalendarDays, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell, PieChart, Pie } from "recharts";
 import WorkspaceSidebar from "@/components/workspace/WorkspaceSidebar";
-
 import WorkspaceHeader from "@/components/workspace/WorkspaceHeader";
 
+import { useNotesStore } from "@/store/notes-store";
+import { generateInsights } from "@/lib/analytics-insights";
+import { useFocusStore } from "@/store/focus-store";
+import { generateAnalytics } from "@/lib/analytics-engine";
+import { useWorkspaceStore } from "@/store/workspace-store";
+import { useExecutionStore } from "@/store/execution-store";
+import { useEffect } from "react";
 
+export const Route = createFileRoute("/analytics")({
+  component: AnalyticsPage,
+});
 
-import {
-  useNotesStore,
-} from "@/store/notes-store";
-import {
-  generateInsights,
-} from "@/lib/analytics-insights";
-
-import {
-  useFocusStore,
-} from "@/store/focus-store";
-
-import {
-  generateAnalytics,
-} from "@/lib/analytics-engine";
-
-export const Route =
-  createFileRoute("/analytics")({
-    component: AnalyticsPage,
-  });
-
-const days = [
-  "Sun",
-  "Mon",
-  "Tue",
-  "Wed",
-  "Thu",
-  "Fri",
-  "Sat",
-];
+const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function AnalyticsPage() {
-  const notesStore =
-    useNotesStore();
+  const notesStore = useNotesStore();
+  const notes = notesStore?.notes || [];
 
-  const notes =
-    notesStore?.notes || [];
+  const { sessions } = useFocusStore();
+  const { fetchExecutionData, habitLogs, projects } = useExecutionStore();
+  const { sidebarCollapsed } = useWorkspaceStore();
 
-  const { sessions } =
-    useFocusStore();
+  useEffect(() => {
+    fetchExecutionData();
+  }, []);
 
-  const analytics =
-    generateAnalytics(
-      sessions
-    );
+  const analytics = generateAnalytics(sessions, notes, habitLogs, []);
 
-  const totalFocusHours =
-    analytics.totalFocusHours;
-
-  const completedSessions =
-    analytics.totalSessions;
-
-  const streak =
-    analytics.streak;
-
-  const momentum =
-    analytics.momentum;
-
-  const productivityScore =
-    analytics.neuralScore;
-
-  const peakDay =
-    analytics.peakDay;
-
-  const weeklyActivity =
-    analytics.weeklyTrend.map(
-      (d) => d.hours
-    );
-
-  const weeklyMax =
-    Math.max(
-      ...weeklyActivity,
-      1
-    );
-
-  const distribution =
-    Object.entries(
-      analytics.focusDistribution
-    ).map(
-      ([label, value]) => ({
-        label,
-        value,
-      })
-    );
-
-  const contributionData =
-    new Map(
-      analytics.heatmap.map(
-        (d) => [
-          d.date,
-          d.sessions,
-        ]
-      )
-    );
-
-  const hourlyHeat = {
-    hours:
-      analytics.peakHoursMap.map(
-        (d) =>
-          d.sessions
-      ),
-
-    peakHour:
-      analytics.peakHour,
-  };
-
-  const intensityTimeline =
-    sessions
-      .slice(-12)
-      .map(
-        (
-          session,
-          index
-        ) => ({
-          id: index,
-          value:
-            Math.round(
-              session.duration /
-                60
-            ),
-        })
-      );
-
-  const dailyAnalytics =
-    analytics.weeklyTrend.map(
-      (day) => ({
-        date: day.day,
-        focusHours:
-          day.hours,
-      })
-    );
-
-  const last7Days =
-    dailyAnalytics;
-
-  const aiInsights =
-  generateInsights({
+  const aiInsights = generateInsights({
     sessions,
     analytics,
     notesCount: notes.length,
   });
 
   return (
-    <div className="min-h-screen bg-background text-white">
-
+    <div className="flex min-h-screen overflow-hidden bg-background text-foreground transition-colors duration-500">
       <WorkspaceSidebar />
 
-      <WorkspaceSidebar />
-
-<motion.div
-  layout
-  transition={{
-    layout: {
-      duration: 0.32,
-      ease: [0.22, 1, 0.36, 1],
-    },
-  }}
-  className="ml-[84px] lg:ml-[280px] transition-[margin] duration-300 ease-out"
->
-
-  <WorkspaceHeader />
-
-  <main className="relative overflow-y-auto pt-28">
-
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.16),transparent_25%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.12),transparent_25%)]" />
-
-          <div className="relative z-10 mx-auto max-w-[1900px] px-8 pb-20">
-
-            <section className="relative overflow-hidden rounded-[42px] border border-white/10 bg-white/[0.03] p-10 backdrop-blur-3xl">
-
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.18),transparent_45%)]" />
-
-              <div className="relative flex flex-col gap-14 xl:flex-row xl:items-end xl:justify-between">
-
-                <div>
-
-                  <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-zinc-300">
-
-                    <Sparkles className="h-3.5 w-3.5 text-purple-400" />
-
-                    Advanced Intelligence Layer
-
-                  </div>
-
-                  <h1 className="mt-6 text-6xl font-black leading-[0.9] tracking-tight">
-
-                    Neural
-
-                    <br />
-
-                    <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
-
-                      analytics
-                    </span>
-
-                  </h1>
-
-                  <p className="mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
-
-                    Real-time cognitive metrics generated
-                    directly from your actual productivity behavior.
-
-                  </p>
-
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-
-                  <GlassMetric
-                    icon={Flame}
-                    label="Current Streak"
-                    value={`${streak}d`}
-                  />
-
-                  <GlassMetric
-                    icon={Brain}
-                    label="Knowledge Nodes"
-                    value={`${notes.length}`}
-                  />
-
-                  <GlassMetric
-                    icon={Gauge}
-                    label="Momentum"
-                    value={`${momentum}%`}
-                  />
-
-                  <GlassMetric
-                    icon={Target}
-                    label="Peak Day"
-                    value={peakDay}
-                  />
-
-                </div>
-
-              </div>
-
-            </section>
-
-            <section className="mt-8">
-
-              <ContributionGraph
-                data={
-                  contributionData
-                }
-              />
-
-            </section>
-
-            <section className="mt-8 grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-
-              <MomentumGraph
-  weeklyTrend={
-    analytics.weeklyTrend
-  }
-/>
-
-              <CognitiveCard
-                score={
-                  productivityScore
-                }
-                momentum={
-                  momentum
-                }
-              />
-
-            </section>
-
-           <section className="mt-8">
-
-  <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
-
-    <div className="flex items-center justify-between">
-
-      <div>
-
-        <p className="text-sm uppercase tracking-[0.2em] text-zinc-500">
-
-          Weekly Evolution
-
-        </p>
-
-        <h2 className="mt-3 text-3xl font-black text-white">
-
-          7-Day Productivity Trend
-
-        </h2>
-
-      </div>
-
-      <TrendingUp className="h-8 w-8 text-cyan-400" />
-
-    </div>
-
-    <div className="mt-12 flex h-[300px] items-end gap-4">
-
-      {last7Days.map(
-        (
-          day: any,
-          index: number
-        ) => (
-
-          <div
-            key={day.date}
-            className="flex flex-1 flex-col items-center"
-          >
-
-            <motion.div
-              initial={{
-                height: 0,
-              }}
-              animate={{
-                height:
-                  Math.max(
-                    24,
-                    Math.min(
-  day.focusHours *
-    42,
-  260
-)
-                  ),
-              }}
-              transition={{
-                duration: 0.7,
-                delay:
-                  index * 0.08,
-              }}
-              className="w-full rounded-t-[28px] bg-gradient-to-t from-purple-500 via-pink-500 to-cyan-400 shadow-[0_0_40px_rgba(168,85,247,0.35)]"
-            />
-
-            <p className="mt-4 text-xs text-zinc-500">
-
-              {
-                new Date(
-                  day.date
-                ).toLocaleDateString(
-                  "en-US",
-                  {
-                    weekday:
-                      "short",
-                  }
-                )
-              }
-
-            </p>
-
-            <p className="mt-2 text-sm font-bold text-white">
-
-              {
-                day.focusHours
-              }h
-
-            </p>
-
-          </div>
-        )
-      )}
-
-    </div>
-
-  </div>
-
-</section>
-
-<section className="mt-8 grid gap-6 xl:grid-cols-2">
-
-  <HourlyHeatmap
-    data={
-      hourlyHeat
-    }
-  />
-
-  <SessionTimeline
-    timeline={
-      intensityTimeline
-    }
-  />
-
-</section>
-
-    <section className="mt-8">
-
-  <div className="rounded-[42px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
-
-    <div className="flex items-center justify-between">
-
-      <div>
-
-        <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-zinc-300">
-
-          <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-
-          Adaptive Intelligence Layer
-
-        </div>
-
-        <h2 className="mt-5 text-5xl font-black tracking-tight text-white">
-
-          AI Productivity
-
-          <span className="bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500 bg-clip-text text-transparent">
-
-            {" "}
-            insights
-
-          </span>
-
-        </h2>
-
-        <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-400">
-
-          Real-time behavioral intelligence generated from your productivity patterns, focus sessions and cognitive momentum.
-
-        </p>
-
-      </div>
-
-      <div className="hidden h-24 w-24 items-center justify-center rounded-full border border-cyan-400/20 bg-cyan-400/10 xl:flex">
-
-        <Brain className="h-10 w-10 text-cyan-300" />
-
-      </div>
-
-    </div>
-
-    <div className="mt-12 grid gap-6 xl:grid-cols-2">
-
-      {aiInsights.map(
-        (
-          insight: any,
-          index: number
-        ) => {
-
-          const colors =
-            insight.type ===
-            "success"
-              ? "from-emerald-500/20 to-cyan-500/10 border-emerald-400/20"
-              : insight.type ===
-                "warning"
-              ? "from-orange-500/20 to-red-500/10 border-orange-400/20"
-              : "from-purple-500/20 to-cyan-500/10 border-purple-400/20";
-
-          return (
-            <motion.div
-              key={index}
-              initial={{
-                opacity: 0,
-                y: 30,
-              }}
-              animate={{
-                opacity: 1,
-                y: 0,
-              }}
-              transition={{
-                delay:
-                  index * 0.08,
-              }}
-              className={`rounded-[32px] border bg-gradient-to-br ${colors} p-7 backdrop-blur-3xl`}
-            >
-
-              <div className="flex items-start justify-between">
-
-                <div>
-
-                  <h3 className="text-2xl font-black text-white">
-
-                    {insight.title}
-
-                  </h3>
-
-                  <p className="mt-4 text-sm leading-relaxed text-zinc-300">
-
-                    {insight.description}
-
-                  </p>
-
-                </div>
-
-                <div className="ml-6 rounded-2xl border border-white/10 bg-white/5 p-3">
-
-                  <Sparkles className="h-5 w-5 text-cyan-300" />
-
-                </div>
-
-              </div>
-
-            </motion.div>
-          );
-        }
-      )}
-
-    </div>
-
-  </div>
-
-</section>
-
-<section className="mt-8 grid gap-6 xl:grid-cols-[1fr_1fr_0.8fr]">
-
-  <DistributionCard
-    data={
-      distribution
-    }
-  />
-
-  <PatternInsights
-    sessions={
-      sessions
-    }
-  />
-
-  <div className="space-y-6">
-
-    <InsightPanel
-      title="Peak Focus Window"
-      icon={Orbit}
-      value={`${hourlyHeat.peakHour}:00`}
-      desc="Derived from real session timing patterns."
-    />
-
-    <InsightPanel
-      title="Session Density"
-      icon={BarChart3}
-      value={`${completedSessions}`}
-      desc="Tracks the intensity of your real deep work flow."
-    />
-
-    <InsightPanel
-      title="Knowledge Flow"
-      icon={Brain}
-      value={`${notes.length} Notes`}
-      desc="Knowledge growth directly linked with productivity sessions."
-    />
-
-  </div>
-
-</section>
-
-<section className="mt-8">
-
-  <KnowledgeConstellation
-    notes={notes}
-    sessions={sessions}
-  />
-
-</section>
-
-                   </div>
-
-        </main>
-
-    </motion.div>
-    </div>
-  );
-}
-
-function GlassMetric({
-  icon: Icon,
-  label,
-  value,
-}: any) {
-  return (
-    <div className="rounded-[30px] border border-white/10 bg-white/[0.04] p-5 backdrop-blur-2xl">
-
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-purple-500/10">
-
-        <Icon className="h-5 w-5 text-purple-300" />
-
-      </div>
-
-      <p className="mt-5 text-sm text-zinc-500">
-
-        {label}
-
-      </p>
-
-      <h3 className="mt-2 text-4xl font-black text-white">
-
-        {value}
-
-      </h3>
-
-    </div>
-  );
-}
-
-function MomentumGraph({
-  weeklyTrend,
-}: any) {
-
-  const velocityData =
-    weeklyTrend.map(
-      (
-        day: any,
-        index: number
-      ) => {
-
-        if (index === 0) {
-          return 0;
-        }
-
-        return (
-          day.hours -
-          weeklyTrend[
-            index - 1
-          ].hours
-        );
-      }
-    );
-
-  const max =
-    Math.max(
-      ...velocityData.map(
-        (v: number) =>
-          Math.abs(v)
-      ),
-      1
-    );
-
-  return (
-    <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
-
-      <div className="flex items-center justify-between">
-
-        <div>
-
-          <h2 className="text-3xl font-bold text-white">
-
-            Productivity Velocity
-
-          </h2>
-
-          <p className="mt-2 text-zinc-500">
-
-            Daily cognitive momentum shift
-
-          </p>
-
-        </div>
-
-        <TrendingUp className="h-7 w-7 text-purple-300" />
-
-      </div>
-
-      <div className="mt-16 flex h-[320px] items-center justify-between gap-4">
-
-        {velocityData.map(
-          (
-            value: number,
-            index: number
-          ) => {
-
-            const height =
-              Math.max(
-                16,
-                (Math.abs(value) /
-                  max) *
-                  180
-              );
-
-            const positive =
-              value >= 0;
-
-            return (
-              <div
-                key={index}
-                className="flex flex-1 flex-col items-center justify-end"
-              >
-
-                <motion.div
-                  initial={{
-                    height: 0,
-                  }}
-                  animate={{
-                    height,
-                  }}
-                  transition={{
-                    duration: 0.6,
-                    delay:
-                      index * 0.05,
-                  }}
-                  className={`w-full rounded-[20px] ${
-                    positive
-                      ? "bg-gradient-to-t from-cyan-500 to-purple-500"
-                      : "bg-gradient-to-t from-red-500 to-orange-400"
-                  }`}
-                />
-
-                <p className="mt-3 text-xs text-zinc-500">
-
-                  {
-                    days[
-                      index
-                    ]
-                  }
-
-                </p>
-
-                <p className="mt-1 text-sm font-bold text-white">
-
-                  {value > 0
-                    ? "+"
-                    : ""}
-                  {value.toFixed(
-                    1
-                  )}
-
-                </p>
-
-              </div>
-            );
-          }
-        )}
-
-      </div>
-
-    </div>
-  );
-}
-
-function CognitiveCard({
-  score,
-  momentum,
-}: any) {
-  return (
-    <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
-
-      <div className="text-center">
-
-        <h3 className="text-3xl font-bold text-white">
-
-          Neural Score
-
-        </h3>
-
-        <p className="mt-2 text-zinc-500">
-
-          Real cognitive momentum
-
-        </p>
-
-        <div className="relative mx-auto mt-10 flex h-72 w-72 items-center justify-center rounded-full border border-purple-500/20">
-
-          <motion.div
-            animate={{
-              rotate: 360,
-            }}
-            transition={{
-              repeat:
-                Infinity,
-              duration: 18,
-              ease: "linear",
-            }}
-            className="absolute inset-0 rounded-full border-t border-purple-400/50"
-          />
-
+      <motion.main
+        animate={{ paddingLeft: sidebarCollapsed ? 96 : 280 }}
+        transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+        className="relative flex-1 overflow-y-auto"
+      >
+        <WorkspaceHeader />
+
+        <div className="relative z-10 mx-auto max-w-[1400px] px-8 pb-24 pt-28 space-y-16">
+          
+          {/* Header */}
           <div>
-
-            <h2 className="text-7xl font-black text-white">
-
-              {score}
-
-            </h2>
-
-            <p className="mt-3 text-zinc-400">
-
-              Momentum {momentum}%
-
+            <div className="inline-flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              <Activity className="h-3.5 w-3.5 text-accent" />
+              Intelligence Core
+            </div>
+            <h1 className="mt-6 text-6xl font-display font-bold leading-[0.9] tracking-tight text-foreground">
+              Analytics <span className="italic text-accent">Command</span>
+            </h1>
+            <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted-foreground">
+              A comprehensive, real-time intelligence report generated from your actual productivity patterns, focus sessions, and knowledge nodes.
             </p>
-
           </div>
 
+          {/* SECTION 1 - EXECUTIVE SUMMARY */}
+          <section className="space-y-6">
+            <SectionHeader title="Executive Summary" desc="Your cognitive state and performance overview." />
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <ExecutiveMetric label="Productivity Score" value={`${analytics.productivityScore}%`} trend={+2.4} icon={Target} />
+              <ExecutiveMetric label="Deep Work Hours" value={`${analytics.totalFocusHours}h`} trend={+1.1} icon={Clock3} />
+              <ExecutiveMetric label="Momentum" value={`${analytics.momentum}%`} trend={+5.2} icon={Gauge} />
+              <ExecutiveMetric label="Consistency" value={`${analytics.consistencyScore}%`} trend={-1.5} icon={Activity} />
+            </div>
+          </section>
+
+          {/* SECTION 2 - MOMENTUM ENGINE */}
+          <section className="space-y-6">
+            <SectionHeader title="Momentum Engine" desc="Daily velocity and cognitive momentum shifts." />
+            <div className="grid gap-6 lg:grid-cols-[1.5fr_1fr]">
+              <div className="paper-panel rounded-[24px] border border-border p-8">
+                <div className="mb-8 flex items-center justify-between">
+                  <h3 className="font-bold text-foreground">Velocity Trend</h3>
+                  <TrendingUp className="h-5 w-5 text-accent" />
+                </div>
+                <div className="h-[250px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={analytics.weeklyTrend} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
+                          <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
+                      <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: 600 }} dy={10} />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Area type="monotone" dataKey="hours" stroke="var(--accent)" strokeWidth={3} fillOpacity={1} fill="url(#colorHours)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="paper-panel rounded-[24px] border border-border p-8 bg-accent/5 relative overflow-hidden">
+                <div className="relative z-10 flex flex-col h-full justify-center">
+                  <h3 className="text-xl font-bold text-foreground mb-4">Momentum Shift</h3>
+                  <p className="text-4xl font-display font-black text-accent">{analytics.momentum > 70 ? 'Accelerating' : analytics.momentum > 40 ? 'Stable' : 'Decelerating'}</p>
+                  <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+                    Based on your recent focus history and completion rates, your momentum is {analytics.momentum > 70 ? 'building rapidly. Keep this pace up to reach peak flow.' : 'currently stabilizing. Try a 25-minute focus block to regain velocity.'}
+                  </p>
+                </div>
+                <div className="absolute -bottom-10 -right-10 opacity-10">
+                  <Gauge className="w-64 h-64 text-accent" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 3 - CONSISTENCY LAB */}
+          <section className="space-y-6">
+            <SectionHeader title="Consistency Lab" desc="Deep work reliability over the last 20 weeks." />
+            <div className="paper-panel rounded-[24px] border border-border p-8">
+               <ConsistencyHeatmap data={analytics.heatmap} />
+            </div>
+          </section>
+
+          {/* SECTION 4 - DEEP WORK ANALYSIS */}
+          <section className="space-y-6">
+            <SectionHeader title="Deep Work Analysis" desc="Session duration, quality, and focus distribution." />
+            <div className="grid gap-6 lg:grid-cols-3">
+              <div className="paper-panel rounded-[24px] border border-border p-8">
+                <h3 className="font-bold text-foreground mb-6">Focus Distribution</h3>
+                <div className="h-[200px]">
+                   <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: 'Morning', value: analytics.focusDistribution.morning },
+                          { name: 'Afternoon', value: analytics.focusDistribution.afternoon },
+                          { name: 'Evening', value: analytics.focusDistribution.evening },
+                          { name: 'Night', value: analytics.focusDistribution.night },
+                        ]}
+                        cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value"
+                      >
+                        <Cell fill="var(--accent)" />
+                        <Cell fill="var(--foreground)" />
+                        <Cell fill="var(--muted)" />
+                        <Cell fill="var(--border)" />
+                      </Pie>
+                      <Tooltip content={<CustomTooltip />} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2 text-xs font-bold uppercase text-muted-foreground">
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-accent" /> Morning</div>
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-foreground" /> Afternoon</div>
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-muted" /> Evening</div>
+                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-border" /> Night</div>
+                </div>
+              </div>
+              <div className="lg:col-span-2 paper-panel rounded-[24px] border border-border p-8">
+                 <h3 className="font-bold text-foreground mb-6">Peak Productivity Window</h3>
+                 <div className="h-[220px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={analytics.peakHoursMap} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
+                        <XAxis dataKey="hour" axisLine={false} tickLine={false} tickFormatter={(h) => `${h}:00`} tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} dy={10} />
+                        <Tooltip content={<CustomTooltip />} />
+                        <Bar dataKey="sessions" fill="var(--foreground)" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                 </div>
+              </div>
+            </div>
+          </section>
+
+          {/* SECTION 5 - PRODUCTIVITY TIMELINE */}
+          <section className="space-y-6">
+            <SectionHeader title="Productivity Timeline" desc="The chronological story of your deep work, notes, and habits." />
+            <div className="paper-panel rounded-[24px] border border-border p-8 max-h-[500px] overflow-y-auto custom-scrollbar">
+               <div className="relative border-l-2 border-border ml-4 space-y-8 pb-4">
+                  {analytics.timeline.length === 0 ? (
+                    <div className="pl-8 text-muted-foreground">No activity recorded yet. Start a focus session!</div>
+                  ) : (
+                    analytics.timeline.map((event, idx) => (
+                      <div key={`${event.id}-${idx}`} className="relative pl-8">
+                        <div className="absolute -left-[11px] top-1 h-5 w-5 rounded-full border-[3px] border-background bg-accent" />
+                        <div className="flex flex-col gap-1">
+                          <p className="text-xs font-bold uppercase text-muted-foreground">{new Date(event.timestamp).toLocaleString()}</p>
+                          <h4 className="text-lg font-bold text-foreground">{event.title}</h4>
+                          {event.type === 'session' && (
+                            <p className="text-sm text-muted-foreground">Duration: {Math.round(event.metadata.duration / 60)} mins • Quality: {event.metadata.rating}/8</p>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+               </div>
+            </div>
+          </section>
+
+          {/* SECTION 6 - KNOWLEDGE ANALYTICS */}
+          <section className="space-y-6">
+            <SectionHeader title="Knowledge Analytics" desc="How your focus impacts your learning velocity." />
+             <div className="grid gap-6 lg:grid-cols-3">
+               <ExecutiveMetric label="Total Notes" value={notes.length} icon={Brain} trend={0} />
+               <div className="lg:col-span-2 paper-panel rounded-[24px] border border-border p-8 bg-secondary/50 flex flex-col justify-center">
+                  <h3 className="text-2xl font-bold text-foreground">Learning Velocity</h3>
+                  <p className="mt-2 text-muted-foreground">
+                    You have generated {notes.length} knowledge nodes resulting from {analytics.totalSessions} focus sessions. This translates to an active cognitive synthesis rate of {(notes.length / Math.max(analytics.totalSessions, 1)).toFixed(2)} notes per session.
+                  </p>
+               </div>
+             </div>
+          </section>
+
+          {/* SECTION 7 - STRATEGIC INSIGHTS */}
+          <section className="space-y-6">
+             <SectionHeader title="Strategic Insights" desc="Actionable, evidence-based AI observations." />
+             <div className="grid gap-6 lg:grid-cols-2">
+                {aiInsights.length === 0 && (
+                  <div className="col-span-2 p-12 text-center border border-border rounded-[24px]">
+                    <Sparkles className="w-8 h-8 text-accent mx-auto mb-4" />
+                    <p className="text-muted-foreground">Generating intelligence... (Complete more sessions for deeper insights)</p>
+                  </div>
+                )}
+                {aiInsights.map((insight: any, index: number) => (
+                  <div key={index} className="rounded-[24px] border border-border bg-background p-8 shadow-sm">
+                    <div className="flex items-start justify-between mb-4">
+                      <h3 className="text-xl font-display font-bold text-foreground">{insight.title}</h3>
+                      <div className="flex items-center justify-center rounded-lg bg-secondary p-2">
+                        <Sparkles className="h-4 w-4 text-accent" />
+                      </div>
+                    </div>
+                    <p className="text-sm leading-relaxed text-muted-foreground">{insight.description}</p>
+                  </div>
+                ))}
+             </div>
+          </section>
+
         </div>
-
-      </div>
-
+      </motion.main>
     </div>
   );
 }
 
-function HourlyHeatmap({
-  data,
-}: any) {
+function SectionHeader({ title, desc }: { title: string, desc: string }) {
   return (
-    <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
+    <div>
+      <h2 className="text-3xl font-display font-bold text-foreground">{title}</h2>
+      <p className="text-sm text-muted-foreground mt-1">{desc}</p>
+    </div>
+  );
+}
 
-      <h3 className="text-3xl font-bold text-white">
-
-        Peak Focus Hours
-
-      </h3>
-
-      <p className="mt-2 text-zinc-500">
-
-        Real session timing analytics
-
-      </p>
-
-      <div className="mt-10 grid grid-cols-6 gap-3">
-
-        {data.hours.map(
-          (
-            value: number,
-            index: number
-          ) => (
-            <motion.div
-              key={index}
-              whileHover={{
-                scale: 1.05,
-              }}
-              className="rounded-2xl border border-white/10 p-4 text-center backdrop-blur-xl"
-              style={{
-                background:
-                  value > 0
-                    ? `rgba(168,85,247,${
-                        0.12 +
-                        value *
-                          0.08
-                      })`
-                    : "rgba(255,255,255,0.03)",
-              }}
-            >
-
-              <p className="text-xs text-zinc-500">
-
-                {index}:00
-
-              </p>
-
-              <h4 className="mt-3 text-2xl font-black text-white">
-
-                {value}
-
-              </h4>
-
-            </motion.div>
-          )
+function ExecutiveMetric({ label, value, trend, icon: Icon }: any) {
+  return (
+    <div className="rounded-[24px] border border-border bg-background p-6 transition-colors paper-panel">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
+          <Icon className="h-5 w-5 text-accent" />
+        </div>
+        {trend !== 0 && (
+          <div className={`px-2 py-1 rounded-md text-xs font-bold ${trend > 0 ? 'bg-green-500/10 text-green-500' : 'bg-red-500/10 text-red-500'}`}>
+            {trend > 0 ? '+' : ''}{trend}%
+          </div>
         )}
-
       </div>
-
+      <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{label}</p>
+      <h3 className="mt-1 text-3xl font-display font-bold text-foreground">{value}</h3>
     </div>
   );
 }
 
-function SessionTimeline({
-  timeline,
-}: any) {
-    const maxValue =
-  Math.max(
-    ...timeline.map(
-      (t: any) => t.value
-    ),
-    1
-  );
-  return (
-    <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
-
-      <h3 className="text-3xl font-bold text-white">
-
-        Session Intensity
-
-      </h3>
-
-      <p className="mt-2 text-zinc-500">
-
-        Rolling deep work intensity
-
-      </p>
-
-    <div className="mt-12 flex h-[260px] items-end gap-4">
-
-  {timeline.map(
-    (
-      item: any,
-      index: number
-    ) => {
-
-      const height =
-        Math.max(
-          18,
-          (item.value /
-            maxValue) *
-            220
-        );
-
-      return (
-        <div
-          key={item.id}
-          className="flex flex-1 flex-col items-center justify-end"
-        >
-
-          <p className="mb-3 text-xs text-zinc-400">
-            {item.value}m
-          </p>
-
-          <motion.div
-            initial={{
-              height: 0,
-            }}
-            animate={{
-              height,
-            }}
-            transition={{
-              duration: 0.6,
-              delay:
-                index * 0.05,
-            }}
-            className="w-full rounded-t-[22px] bg-gradient-to-t from-cyan-500 via-purple-500 to-pink-500 shadow-[0_0_30px_rgba(168,85,247,0.35)]"
-          />
-
-          <p className="mt-3 text-xs text-zinc-500">
-            S{index + 1}
-          </p>
-
-        </div>
-      );
-    }
-  )}
-
-</div>
-
-    </div>
-  );
-}
-
-function PatternInsights({
-  sessions,
-}: any) {
-
-  const averageRating =
-    sessions.length
-      ? (
-          sessions.reduce(
-            (
-              acc: number,
-              session: any
-            ) =>
-              acc +
-              session.rating,
-            0
-          ) /
-          sessions.length
-        ).toFixed(1)
-      : "0";
-
-  const averageDuration =
-    sessions.length
-      ? Math.round(
-          sessions.reduce(
-            (
-              acc: number,
-              session: any
-            ) =>
-              acc +
-              session.duration,
-            0
-          ) /
-            sessions.length /
-            60
-        )
-      : 0;
-
-  const highFocusSessions =
-    sessions.filter(
-      (
-        session: any
-      ) =>
-        session.rating >=
-        7
-    ).length;
-
-  const stability =
-    sessions.length
-      ? Math.round(
-          (highFocusSessions /
-            sessions.length) *
-            100
-        )
-      : 0;
-
-  const consistency =
-    Math.min(
-      100,
-      Math.round(
-        sessions.length *
-          8
-      )
-    );
-
-  const productiveState =
-    averageDuration >= 45
-      ? "Deep Flow"
-      : averageDuration >= 20
-      ? "Focused Rhythm"
-      : "Building Flow";
-
-  return (
-    <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
-
-      <h3 className="text-3xl font-bold text-white">
-
-        Pattern Recognition
-
-      </h3>
-
-      <p className="mt-2 text-zinc-500">
-
-        AI-derived behavioral analysis
-
-      </p>
-
-      <div className="mt-10 space-y-6">
-
-        <InsightLine
-          label="Most productive state"
-          value={productiveState}
-        />
-
-        <InsightLine
-          label="Average session rating"
-          value={`${averageRating}/8`}
-        />
-
-        <InsightLine
-          label="Session stability"
-          value={`${stability}%`}
-        />
-
-        <InsightLine
-          label="Cognitive consistency"
-          value={`${consistency}%`}
-        />
-
-      </div>
-
-    </div>
-  );
-}
-
-function InsightLine({
-  label,
-  value,
-}: any) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-black/20 p-5">
-
-      <p className="text-sm text-zinc-500">
-
-        {label}
-
-      </p>
-
-      <h4 className="mt-3 text-2xl font-bold text-white">
-
-        {value}
-
-      </h4>
-
-    </div>
-  );
-}
-
-function InsightPanel({
-  title,
-  value,
-  desc,
-  icon: Icon,
-}: any) {
-  return (
-    <div className="rounded-[34px] border border-white/10 bg-white/[0.03] p-6 backdrop-blur-3xl">
-
-      <div className="flex items-center justify-between">
-
-        <div>
-
-          <p className="text-sm text-zinc-500">
-
-            {title}
-
-          </p>
-
-          <h3 className="mt-2 text-3xl font-black text-white">
-
-            {value}
-
-          </h3>
-
-        </div>
-
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/10">
-
-          <Icon className="h-6 w-6 text-purple-300" />
-
-        </div>
-
-      </div>
-
-      <p className="mt-5 text-sm leading-relaxed text-zinc-400">
-
-        {desc}
-
-      </p>
-
-    </div>
-  );
-}
-
-function ContributionGraph({
-  data,
-}: any) {
-  const weeks = 20;
-
-  const today =
-    new Date();
-
-  const cells: {
-    date: string;
-    value: number;
-  }[] = [];
-
-  for (
-    let i = weeks * 7;
-    i >= 0;
-    i--
-  ) {
-    const date =
-      new Date();
-
-    date.setDate(
-      today.getDate() - i
-    );
-
-    const key =
-      date
-        .toISOString()
-        .split("T")[0];
-
-    const value =
-      data.get(key) || 0;
-
-    cells.push({
-      date: key,
-      value,
-    });
+function ConsistencyHeatmap({ data }: { data: any[] }) {
+  const weeks = 24;
+  const today = new Date();
+  const cells: { date: string; value: number; minutes: number }[] = [];
+
+  for (let i = weeks * 7; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(today.getDate() - i);
+    const key = date.toISOString().split("T")[0];
+    const match = data.find(d => d.date === key);
+    cells.push({ date: key, value: match?.sessions || 0, minutes: match?.minutes || 0 });
   }
 
-  const intensity = (
-    value: number
-  ) => {
-    if (value === 0)
-      return "bg-white/[0.05]";
-
-    if (value === 1)
-      return "bg-purple-500/30";
-
-    if (value === 2)
-      return "bg-purple-500/50";
-
-    if (value === 3)
-      return "bg-pink-500/70";
-
-    return "bg-cyan-400";
+  const intensity = (value: number) => {
+    if (value === 0) return "bg-background border-border";
+    if (value === 1) return "bg-accent/30 border-accent/20";
+    if (value === 2) return "bg-accent/60 border-accent/50";
+    if (value >= 3) return "bg-accent border-accent";
+    return "bg-foreground border-foreground";
   };
 
   return (
-    <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
-
-      <h3 className="text-3xl font-bold text-white">
-
-        Focus Consistency
-
-      </h3>
-
-      <p className="mt-2 text-zinc-500">
-
-        Real tracked contribution activity
-
-      </p>
-
-      <div className="mt-10 flex gap-[5px] overflow-x-auto">
-
-        {Array.from({
-          length: weeks,
-        }).map(
-          (
-            _,
-            weekIndex
-          ) => (
-            <div
-              key={weekIndex}
-              className="flex flex-col gap-[5px]"
-            >
-
-              {Array.from({
-                length: 7,
-              }).map(
-                (
-                  __,
-                  dayIndex
-                ) => {
-                  const cell =
-                    cells[
-                      weekIndex *
-                        7 +
-                        dayIndex
-                    ];
-
-                  return (
-                    <div
-  key={cell.date}
-  className="group relative"
->
-  <motion.div
-    whileHover={{
-      scale: 1.35,
-    }}
-    className={`h-4 w-4 rounded-[4px] transition-all duration-200 cursor-pointer ${intensity(
-      cell.value
-    )}`}
-  />
-
-  <div className="pointer-events-none absolute bottom-[140%] left-1/2 z-50 hidden -translate-x-1/2 rounded-xl border border-white/10 bg-[#09090f]/95 px-3 py-2 text-xs text-white shadow-2xl backdrop-blur-xl group-hover:block">
-
-    <p className="font-semibold">
-      {cell.value} sessions
-    </p>
-
-    <p className="mt-1 text-zinc-400">
-      {new Date(
-        cell.date
-      ).toLocaleDateString()}
-    </p>
-
-  </div>
-</div>
-                  );
-                }
-              )}
-
-            </div>
-          )
-        )}
-
-      </div>
-
-    </div>
-  );
-}
-
-function DistributionCard({
-  data,
-}: any) {
-  return (
-    <div className="rounded-[36px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
-
-      <h3 className="text-3xl font-bold text-white">
-
-        Focus Distribution
-
-      </h3>
-
-      <p className="mt-2 text-zinc-500">
-
-        Derived from real sessions
-
-      </p>
-
-      <div className="mt-10 space-y-8">
-
-        {data.map(
-          (
-            item: any,
-            index: number
-          ) => (
-            <div
-              key={
-                item.label
-              }
-            >
-
-              <div className="mb-3 flex items-center justify-between">
-
-                <p className="text-sm text-zinc-400">
-
-                  {
-                    item.label
-                  }
-
-                </p>
-
-                <p className="text-sm text-white">
-
-                  {
-                    item.value
-                  }
-                  %
-
-                </p>
-
-              </div>
-
-              <div className="h-4 overflow-hidden rounded-full bg-white/5">
-
-                <motion.div
-                  initial={{
-                    width: 0,
-                  }}
-                  animate={{
-                    width: `${item.value}%`,
-                  }}
-                  transition={{
-                    duration: 1,
-                    delay:
-                      index *
-                      0.08,
-                  }}
-                  className="h-full rounded-full bg-gradient-to-r from-purple-500 via-pink-500 to-cyan-400"
-                />
-
-              </div>
-
-            </div>
-          )
-        )}
-
-      </div>
-
-    </div>
-  );
-}
-
-function KnowledgeConstellation({
-  notes,
-  sessions,
-}: any) {
-    if (!notes.length) {
-  return (
-    <div className="rounded-[42px] border border-white/10 bg-white/[0.03] p-12 text-center backdrop-blur-3xl">
-
-      <h2 className="text-4xl font-black text-white">
-
-        Knowledge Constellation
-
-      </h2>
-
-      <p className="mt-6 text-zinc-500">
-
-        Start creating notes to build your neural knowledge graph.
-
-      </p>
-
-    </div>
-  );
-}
-  const nodes =
-  
-    notes.map(
-        
-      (
-        note: any,
-        index: number
-      ) => {
-        const angle =
-          (index /
-            Math.max(
-              notes.length,
-              1
-            )) *
-          Math.PI *
-          2;
-
-        const radius =
-          220 +
-          (index % 3) * 70;
-
-        const x =
-          Math.cos(angle) *
-          radius;
-
-        const y =
-          Math.sin(angle) *
-          radius;
-
-        const connections =
-          notes.filter(
-            (
-              other: any
-            ) =>
-              other.id !==
-                note.id &&
-              (
-                other.category ===
-                  note.category ||
-                other.tags?.some(
-                  (
-                    tag: string
-                  ) =>
-                    note.tags?.includes(
-                      tag
-                    )
-                )
-              )
-          );
-
-        return {
-          ...note,
-          x,
-          y,
-          connections:
-            connections.length,
-        };
-      }
-    );
-
-    
-
-  const totalConnections =
-    nodes.reduce(
-      (
-        acc: number,
-        node: any
-      ) =>
-        acc +
-        node.connections,
-      0
-    );
-
-  const neuralDensity =
-    Math.min(
-      100,
-      Math.round(
-        totalConnections *
-          4 +
-          sessions.length *
-            2
-      )
-    );
-    
-
-
-  return (
-    <div className="relative overflow-hidden rounded-[42px] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-3xl">
-
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.15),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.10),transparent_30%)]" />
-
-      <div className="relative z-10">
-
-        <div className="flex flex-col gap-8 xl:flex-row xl:items-start xl:justify-between">
-
-          <div>
-
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-4 py-2 text-xs text-zinc-300">
-
-              <Orbit className="h-3.5 w-3.5 text-purple-400" />
-
-              Neural Knowledge System
-
-            </div>
-
-            <h2 className="mt-6 text-5xl font-black tracking-tight text-white">
-
-              Knowledge
-
-              <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-cyan-400 bg-clip-text text-transparent">
-
-                {" "}
-                constellation
-              </span>
-
-            </h2>
-
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-zinc-400">
-
-              Real-time visualization of your connected thinking architecture generated from actual notes, sessions and semantic relationships.
-
-            </p>
-
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-
-            <ConstellationMetric
-              label="Knowledge Nodes"
-              value={`${notes.length}`}
-              color="from-purple-500 to-pink-500"
-            />
-
-            <ConstellationMetric
-              label="Neural Density"
-              value={`${neuralDensity}%`}
-              color="from-cyan-400 to-blue-500"
-            />
-
-            <ConstellationMetric
-              label="Connections"
-              value={`${totalConnections}`}
-              color="from-pink-500 to-orange-400"
-            />
-
-            <ConstellationMetric
-              label="Live Sessions"
-              value={`${sessions.length}`}
-              color="from-emerald-400 to-cyan-400"
-            />
-
-          </div>
-
-        </div>
-
-        <div className="relative mt-16 h-[720px] overflow-hidden rounded-[38px] border border-white/10 bg-black/30">
-
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.12),transparent_45%)]" />
-
-          <div className="absolute inset-0 opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
-
-          {nodes.map(
-            (
-              node: any,
-              index: number
-            ) =>
-              nodes.map(
-                (
-                  target: any,
-                  targetIndex: number
-                ) => {
-                  if (
-                    index >=
-                    targetIndex
-                  )
-                    return null;
-
-                  const sharedCategory =
-                    node.category ===
-                    target.category;
-
-                  const sharedTag =
-                    node.tags?.some(
-                      (
-                        tag: string
-                      ) =>
-                        target.tags?.includes(
-                          tag
-                        )
-                    );
-
-                  if (
-                    !sharedCategory &&
-                    !sharedTag
-                  )
-                    return null;
-
-                  return (
-                    <svg
-  key={`${node.id}-${target.id}`}
-  className="pointer-events-none absolute inset-0 h-full w-full"
->
-
-  <line
-    x1={node.x + 760}
-    y1={360 + node.y}
-    x2={target.x + 760}
-    y2={360 + target.y}
-    stroke={
-      sharedCategory
-        ? "rgba(168,85,247,0.35)"
-        : "rgba(34,211,238,0.28)"
-    }
-    strokeWidth="1.5"
-  />
-
-</svg>
-                  );
-                }
-              )
-          )}
-
-          <div className="absolute left-1/2 top-1/2 flex h-36 w-36 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-purple-500/20 bg-black/60 backdrop-blur-3xl">
-
-            <motion.div
-              animate={{
-                rotate: 360,
-              }}
-              transition={{
-                repeat:
-                  Infinity,
-                duration: 28,
-                ease: "linear",
-              }}
-              className="absolute inset-0 rounded-full border-t border-purple-400/50"
-            />
-
-            <div className="text-center">
-
-              <h3 className="text-4xl font-black text-white">
-
-                {notes.length}
-
-              </h3>
-
-              <p className="mt-1 text-xs uppercase tracking-[0.3em] text-zinc-500">
-
-                Nodes
-
-              </p>
-
-            </div>
-
-          </div>
-
-          {nodes.map(
-            (
-              node: any,
-              index: number
-            ) => (
-              <motion.div
-                key={node.id}
-                initial={{
-                  opacity: 0,
-                  scale: 0,
-                }}
-                animate={{
-                  opacity: 1,
-                  scale: 1,
-                }}
-                transition={{
-                  delay:
-                    index * 0.04,
-                  duration: 0.45,
-                }}
-                whileHover={{
-                  scale: 1.12,
-                }}
-                className="group absolute"
-                style={{
-                  left: `calc(50% + ${node.x}px)`,
-                  top: `calc(50% + ${node.y}px)`,
-                  transform:
-                    "translate(-50%, -50%)",
-                }}
-              >
-
-                <div className="relative">
-
-                  <div className="absolute inset-0 rounded-full bg-purple-500/30 blur-2xl transition-all duration-300 group-hover:bg-cyan-400/40" />
-
-                  <div className="relative flex h-20 w-20 items-center justify-center rounded-full border border-white/10 bg-black/70 backdrop-blur-3xl">
-
-                    <Brain className="h-8 w-8 text-purple-300" />
-
+    <div className="w-full overflow-x-auto custom-scrollbar pb-4">
+      <div className="flex gap-[4px] min-w-max">
+        {Array.from({ length: weeks }).map((_, weekIndex) => (
+          <div key={weekIndex} className="flex flex-col gap-[4px]">
+            {Array.from({ length: 7 }).map((__, dayIndex) => {
+              const cell = cells[weekIndex * 7 + dayIndex];
+              if (!cell) return null;
+              return (
+                <div key={cell.date} className="group relative">
+                  <div
+                    className={`h-[14px] w-[14px] rounded-[3px] border transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-foreground/50 ${intensity(cell.value)}`}
+                  />
+                  <div className="pointer-events-none absolute bottom-[150%] left-1/2 z-50 hidden min-w-[140px] -translate-x-1/2 rounded-[8px] border border-border bg-zinc-900 px-3 py-2 text-xs text-white shadow-xl group-hover:block whitespace-nowrap">
+                    <p className="font-bold text-white mb-1">{new Date(cell.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
+                    <p className="text-zinc-400">{cell.value} sessions</p>
+                    <p className="text-zinc-400">{cell.minutes} deep work mins</p>
                   </div>
-
-                  <div className="pointer-events-none absolute left-1/2 top-[110%] z-50 w-64 -translate-x-1/2 rounded-3xl border border-white/10 bg-[#09090f]/95 p-5 opacity-0 shadow-2xl shadow-purple-500/20 backdrop-blur-3xl transition-all duration-300 group-hover:translate-y-2 group-hover:opacity-100">
-
-                    <h4 className="text-lg font-bold text-white">
-
-                      {node.title ||
-                        "Untitled Note"}
-
-                    </h4>
-
-                    <p className="mt-3 line-clamp-4 text-sm leading-relaxed text-zinc-400">
-
-                      {node.plainText ||
-                        "No content available"}
-
-                    </p>
-
-                    <div className="mt-4 flex items-center justify-between">
-
-                      <div className="rounded-full border border-purple-500/20 bg-purple-500/10 px-3 py-1 text-xs text-purple-300">
-
-                        {node.connections} Links
-
-                      </div>
-
-                      <div className="rounded-full border border-cyan-500/20 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-300">
-
-                        Live Node
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
                 </div>
-
-              </motion.div>
-            )
-          )}
-
-        </div>
-
+              );
+            })}
+          </div>
+        ))}
       </div>
-
     </div>
   );
 }
 
-function ConstellationMetric({
-  label,
-  value,
-  color,
-}: any) {
-  return (
-    <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-5 backdrop-blur-2xl">
-
-      <div className={`h-2 w-full rounded-full bg-gradient-to-r ${color}`} />
-
-      <p className="mt-5 text-sm text-zinc-500">
-
-        {label}
-
-      </p>
-
-      <h3 className="mt-2 text-4xl font-black text-white">
-
-        {value}
-
-      </h3>
-
-    </div>
-  );
-}
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-xl border border-border bg-background p-3 shadow-lg">
+        <p className="text-xs font-bold uppercase text-muted-foreground">{label || payload[0].name || payload[0].payload.name}</p>
+        <p className="text-lg font-bold text-foreground">{payload[0].value}</p>
+      </div>
+    );
+  }
+  return null;
+};
 
 export default AnalyticsPage;

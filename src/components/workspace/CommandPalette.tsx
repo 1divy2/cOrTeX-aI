@@ -1,7 +1,5 @@
 import * as React from "react";
-
 import { useNavigate } from "@tanstack/react-router";
-
 import {
   Command as CommandIcon,
   FileText,
@@ -17,688 +15,219 @@ import {
   Network,
   Sparkles,
   ArrowRight,
+  Settings,
 } from "lucide-react";
-
-import {
-  Command as CommandPrimitive,
-} from "cmdk";
-
-import {
-  motion,
-  AnimatePresence,
-} from "framer-motion";
-
-import {
-  useNotesStore,
-} from "@/store/notes-store";
+import { Command as CommandPrimitive } from "cmdk";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNotesStore } from "@/store/notes-store";
+import { useTasksStore } from "@/store/tasks-store";
 
 export default function CommandPalette() {
-  const [open, setOpen] =
-    React.useState(false);
+  const [open, setOpen] = React.useState(false);
+  const [query, setQuery] = React.useState("");
+  const navigate = useNavigate();
 
-  const [query, setQuery] =
-    React.useState("");
-
-  const navigate =
-    useNavigate();
-
-  const {
-    createNote,
-    searchNotes,
-    getRecentNotes,
-    getFavoriteNotes,
-    setActiveNote,
-  } = useNotesStore();
+  const { createNote, searchNotes, getRecentNotes, getFavoriteNotes, setActiveNote } = useNotesStore();
+  const { tasks } = useTasksStore();
 
   React.useEffect(() => {
-    const down = (
-      e: KeyboardEvent
-    ) => {
-      if (
-        (e.metaKey ||
-          e.ctrlKey) &&
-        e.key.toLowerCase() ===
-          "k"
-      ) {
+    const down = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-
-        setOpen(
-          (o) => !o
-        );
+        setOpen((o) => !o);
       }
-
-      if (
-        e.key === "Escape"
-      ) {
+      if (e.key === "Escape") {
         setOpen(false);
       }
     };
-
-    document.addEventListener(
-      "keydown",
-      down
-    );
-
-    return () =>
-      document.removeEventListener(
-        "keydown",
-        down
-      );
+    document.addEventListener("keydown", down);
+    return () => document.removeEventListener("keydown", down);
   }, []);
 
-  const goTo = (
-    path: string
-  ) => {
-    navigate({
-      to: path,
-    });
-
+  const goTo = (path: string) => {
+    navigate({ to: path });
     setOpen(false);
-
     setQuery("");
   };
 
-  const openNote = (
-    id: string
-  ) => {
+  const openNote = (id: string) => {
     setActiveNote(id);
-
-    navigate({
-      to: "/notes",
-    });
-
+    navigate({ to: "/notes" });
     setOpen(false);
-
     setQuery("");
   };
 
-  const createNewNote =
-    () => {
-      createNote();
+  const createNewNote = () => {
+    createNote();
+    navigate({ to: "/notes" });
+    setOpen(false);
+    setQuery("");
+  };
 
-      navigate({
-        to: "/notes",
-      });
+  const safeQuery = (query || "").toLowerCase();
 
-      setOpen(false);
+  const matchingNotes = React.useMemo(() => {
+    if (!safeQuery.trim()) return [];
+    try {
+      return searchNotes(safeQuery).filter((n) => n && typeof n.id === "string");
+    } catch {
+      return [];
+    }
+  }, [safeQuery, searchNotes]);
 
-      setQuery("");
-    };
+  const matchingTasks = React.useMemo(() => {
+    if (!safeQuery.trim()) return [];
+    return tasks.filter((t) => t.title.toLowerCase().includes(safeQuery));
+  }, [safeQuery, tasks]);
 
-  const safeQuery =
-    (
-      query || ""
-    ).toLowerCase();
+  const recentNotes = React.useMemo(() => {
+    try {
+      const results = getRecentNotes();
+      return Array.isArray(results) ? results.filter((n) => n && typeof n.id === "string") : [];
+    } catch {
+      return [];
+    }
+  }, [getRecentNotes]);
 
-  const matchingNotes =
-    React.useMemo(() => {
-      try {
-        if (
-          !safeQuery.trim()
-        ) {
-          return [];
-        }
-
-        const results =
-          searchNotes(
-            safeQuery
-          );
-
-        if (
-          !Array.isArray(
-            results
-          )
-        ) {
-          return [];
-        }
-
-        return results.filter(
-          (note) =>
-            note &&
-            typeof note.id ===
-              "string"
-        );
-      } catch (
-        error
-      ) {
-        console.error(
-          "Palette search error:",
-          error
-        );
-
-        return [];
-      }
-    }, [
-      safeQuery,
-      searchNotes,
-    ]);
-
-  const recentNotes =
-    React.useMemo(() => {
-      try {
-        const results =
-          getRecentNotes();
-
-        return Array.isArray(
-          results
-        )
-          ? results.filter(
-              (note) =>
-                note &&
-                typeof note.id ===
-                  "string"
-            )
-          : [];
-      } catch {
-        return [];
-      }
-    }, [getRecentNotes]);
-
-  const favoriteNotes =
-    React.useMemo(() => {
-      try {
-        const results =
-          getFavoriteNotes();
-
-        return Array.isArray(
-          results
-        )
-          ? results.filter(
-              (note) =>
-                note &&
-                typeof note.id ===
-                  "string"
-            )
-          : [];
-      } catch {
-        return [];
-      }
-    }, [getFavoriteNotes]);
+  const favoriteNotes = React.useMemo(() => {
+    try {
+      const results = getFavoriteNotes();
+      return Array.isArray(results) ? results.filter((n) => n && typeof n.id === "string") : [];
+    } catch {
+      return [];
+    }
+  }, [getFavoriteNotes]);
 
   return (
-    <>
-      <AnimatePresence>
-
-        {open && (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[300] flex items-start justify-center pt-[12vh] bg-background/50 backdrop-blur-md"
+          onClick={() => setOpen(false)}
+        >
           <motion.div
-            initial={{
-              opacity: 0,
-            }}
-            animate={{
-              opacity: 1,
-            }}
-            exit={{
-              opacity: 0,
-            }}
-            className="fixed inset-0 z-[300] bg-black/50 backdrop-blur-xl"
-            onClick={() =>
-              setOpen(false)
-            }
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            onClick={(e) => e.stopPropagation()}
+            className="w-full max-w-2xl overflow-hidden rounded-[24px] border border-border bg-secondary shadow-2xl"
           >
-
-            <motion.div
-              initial={{
-                opacity: 0,
-                scale: 0.96,
-                y: 24,
-              }}
-              animate={{
-                opacity: 1,
-                scale: 1,
-                y: 0,
-              }}
-              exit={{
-                opacity: 0,
-                scale: 0.96,
-                y: 24,
-              }}
-              transition={{
-                duration: 0.22,
-              }}
-              onClick={(e) =>
-                e.stopPropagation()
-              }
-              className="absolute left-1/2 top-[12%] w-full max-w-3xl -translate-x-1/2 overflow-hidden rounded-[34px] border border-white/10 bg-[#09090b]/95 shadow-[0_0_120px_rgba(168,85,247,0.25)] backdrop-blur-3xl"
-            >
-
-              <CommandPrimitive
-                shouldFilter={
-                  false
-                }
-                className="w-full"
-              >
-
-                <div className="relative border-b border-white/10 px-6 py-5">
-
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(168,85,247,0.18),transparent_55%)]" />
-
-                  <div className="relative flex items-center gap-4">
-
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-500/10">
-
-                      <Search className="h-5 w-5 text-purple-300" />
-
-                    </div>
-
-                    <CommandPrimitive.Input
-                      autoFocus
-                      value={
-                        query || ""
-                      }
-                      onValueChange={(
-                        value
-                      ) =>
-                        setQuery(
-                          value || ""
-                        )
-                      }
-                      placeholder="Search anything across your workspace..."
-                      className="h-11 w-full bg-transparent text-base text-white outline-none placeholder:text-zinc-500"
-                    />
-
-                  </div>
-
+            <CommandPrimitive shouldFilter={false} className="flex h-full w-full flex-col">
+              <div className="relative border-b border-border px-5 py-4 flex items-center gap-3">
+                <Search className="h-5 w-5 text-muted-foreground shrink-0" />
+                <CommandPrimitive.Input
+                  autoFocus
+                  value={query || ""}
+                  onValueChange={(val) => setQuery(val || "")}
+                  placeholder="Search notes, tasks, or type a command..."
+                  className="flex-1 bg-transparent text-lg font-medium text-foreground outline-none placeholder:text-muted-foreground"
+                />
+                <div className="rounded-md border border-border bg-background px-2 py-1 text-xs font-bold text-muted-foreground">
+                  ESC
                 </div>
+              </div>
 
-                <CommandPrimitive.List className="max-h-[620px] overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
+              <CommandPrimitive.List className="max-h-[50vh] overflow-y-auto p-3 custom-scrollbar">
+                <CommandPrimitive.Empty className="py-12 text-center">
+                  <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-border bg-background">
+                    <Search className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold text-foreground">No results found</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">Try searching notes, tasks or commands</p>
+                </CommandPrimitive.Empty>
 
-                  <CommandPrimitive.Empty className="py-16 text-center">
-
-                    <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-[28px] border border-white/10 bg-white/[0.03]">
-
-                      <Search className="h-8 w-8 text-zinc-600" />
-
-                    </div>
-
-                    <h3 className="mt-6 text-xl font-bold text-white">
-
-                      No results found
-
-                    </h3>
-
-                    <p className="mt-2 text-sm text-zinc-500">
-
-                      Try searching notes, tasks or commands
-
-                    </p>
-
-                  </CommandPrimitive.Empty>
-
-                  {matchingNotes.length >
-                    0 && (
-                    <Section
-                      title="Knowledge Search"
-                    >
-
-                      {matchingNotes
-                        .slice(0, 6)
-                        .map(
-                          (
-                            note
-                          ) => (
-                            <PaletteItem
-                              key={
-                                note.id
-                              }
-                              icon={
-                                FileText
-                              }
-                              color="text-cyan-300"
-                              label={
-                                note.title ||
-                                "Untitled Note"
-                              }
-                              desc={
-                                note.plainText?.slice(
-                                  0,
-                                  90
-                                ) ||
-                                "Knowledge note"
-                              }
-                              onSelect={() =>
-                                openNote(
-                                  note.id
-                                )
-                              }
-                            />
-                          )
-                        )}
-
-                    </Section>
-                  )}
-
-                  <Section title="Navigation">
-
-                    <PaletteItem
-                      icon={
-                        LayoutDashboard
-                      }
-                      color="text-purple-300"
-                      label="Workspace"
-                      desc="Open productivity dashboard"
-                      onSelect={() =>
-                        goTo(
-                          "/workspace"
-                        )
-                      }
-                    />
-
-                    <PaletteItem
-                      icon={
-                        FileText
-                      }
-                      color="text-cyan-300"
-                      label="Notes"
-                      desc="Open second brain workspace"
-                      onSelect={() =>
-                        goTo(
-                          "/notes"
-                        )
-                      }
-                    />
-
-                    <PaletteItem
-                      icon={
-                        CheckSquare
-                      }
-                      color="text-pink-300"
-                      label="Tasks"
-                      desc="Manage execution system"
-                      onSelect={() =>
-                        goTo(
-                          "/tasks"
-                        )
-                      }
-                    />
-
-                    <PaletteItem
-                      icon={
-                        BarChart3
-                      }
-                      color="text-emerald-300"
-                      label="Analytics"
-                      desc="View productivity insights"
-                      onSelect={() =>
-                        goTo(
-                          "/analytics"
-                        )
-                      }
-                    />
-
-                    <PaletteItem
-                      icon={
-                        Network
-                      }
-                      color="text-orange-300"
-                      label="Knowledge Graph"
-                      desc="Visualize note relationships"
-                      onSelect={() =>
-                        goTo(
-                          "/graph"
-                        )
-                      }
-                    />
-
+                {matchingNotes.length > 0 && (
+                  <Section title="Knowledge Search">
+                    {matchingNotes.slice(0, 4).map((note) => (
+                      <PaletteItem
+                        key={note.id}
+                        icon={FileText}
+                        label={note.title || "Untitled Note"}
+                        desc={note.plainText?.slice(0, 60) || "Knowledge note"}
+                        onSelect={() => openNote(note.id)}
+                      />
+                    ))}
                   </Section>
+                )}
 
-                  <Section title="Quick Actions">
-
-                    <PaletteItem
-                      icon={Plus}
-                      color="text-cyan-300"
-                      label="Create New Note"
-                      desc="Instantly create a knowledge entry"
-                      onSelect={
-                        createNewNote
-                      }
-                    />
-
-                    <PaletteItem
-                      icon={Zap}
-                      color="text-yellow-300"
-                      label="AI Focus Session"
-                      desc="Begin a new tracked focus session"
-                      onSelect={() =>
-                        goTo(
-                          "/workspace"
-                        )
-                      }
-                    />
-
+                {matchingTasks.length > 0 && (
+                  <Section title="Tasks Search">
+                    {matchingTasks.slice(0, 4).map((task) => (
+                      <PaletteItem
+                        key={task.id}
+                        icon={CheckSquare}
+                        label={task.title}
+                        desc={task.completed ? "Completed task" : "Pending task"}
+                        onSelect={() => goTo("/tasks")}
+                      />
+                    ))}
                   </Section>
+                )}
 
-                  {recentNotes.length >
-                    0 && (
-                    <Section title="Recent Notes">
-
-                      {recentNotes
-                        .slice(0, 4)
-                        .map(
-                          (
-                            note
-                          ) => (
-                            <PaletteItem
-                              key={
-                                note.id
-                              }
-                              icon={
-                                Clock3
-                              }
-                              color="text-zinc-300"
-                              label={
-                                note.title ||
-                                "Untitled Note"
-                              }
-                              desc="Recently updated"
-                              onSelect={() =>
-                                openNote(
-                                  note.id
-                                )
-                              }
-                            />
-                          )
-                        )}
-
+                {!safeQuery && (
+                  <>
+                    <Section title="Navigation">
+                      <PaletteItem icon={LayoutDashboard} label="Workspace Dashboard" onSelect={() => goTo("/workspace")} />
+                      <PaletteItem icon={FileText} label="Knowledge Base" onSelect={() => goTo("/notes")} />
+                      <PaletteItem icon={CheckSquare} label="Task Execution" onSelect={() => goTo("/tasks")} />
+                      <PaletteItem icon={BarChart3} label="Analytics & Insights" onSelect={() => goTo("/analytics")} />
+                      <PaletteItem icon={Settings} label="Workspace Settings" onSelect={() => goTo("/settings")} />
                     </Section>
-                  )}
 
-                  {favoriteNotes.length >
-                    0 && (
-                    <Section title="Favorite Notes">
-
-                      {favoriteNotes
-                        .slice(0, 4)
-                        .map(
-                          (
-                            note
-                          ) => (
-                            <PaletteItem
-                              key={
-                                note.id
-                              }
-                              icon={
-                                Star
-                              }
-                              color="text-yellow-300"
-                              label={
-                                note.title ||
-                                "Untitled Note"
-                              }
-                              desc="Favorited knowledge"
-                              onSelect={() =>
-                                openNote(
-                                  note.id
-                                )
-                              }
-                            />
-                          )
-                        )}
-
+                    <Section title="Quick Actions">
+                      <PaletteItem icon={Plus} label="Create New Note" desc="Instantly capture an idea" onSelect={createNewNote} />
+                      <PaletteItem icon={Zap} label="Start AI Focus Session" desc="Begin deep work" onSelect={() => goTo("/workspace")} />
                     </Section>
-                  )}
 
-                  <div className="relative mt-6 overflow-hidden rounded-[30px] border border-purple-500/20 bg-purple-500/10 p-5">
-
-                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(168,85,247,0.18),transparent_55%)]" />
-
-                    <div className="relative flex items-start gap-4">
-
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/20">
-
-                        <Brain className="h-6 w-6 text-purple-300" />
-
-                      </div>
-
-                      <div className="flex-1">
-
-                        <div className="flex items-center gap-2">
-
-                          <p className="text-lg font-bold text-white">
-
-                            corTeX AI
-
-                          </p>
-
-                          <Sparkles className="h-4 w-4 text-purple-300" />
-
-                        </div>
-
-                        <p className="mt-2 text-sm leading-relaxed text-zinc-400">
-
-                          Your intelligent workspace layer for notes, analytics, execution and connected thinking.
-
-                        </p>
-
-                      </div>
-
-                    </div>
-
-                  </div>
-
-                </CommandPrimitive.List>
-
-                <div className="flex items-center justify-between border-t border-white/10 px-5 py-4 text-xs text-zinc-500">
-
-                  <div className="flex items-center gap-3">
-
-                    <kbd className="rounded border border-white/10 px-2 py-1">
-
-                      ↑↓
-
-                    </kbd>
-
-                    Navigate
-
-                  </div>
-
-                  <div className="flex items-center gap-3">
-
-                    <kbd className="rounded border border-white/10 px-2 py-1">
-
-                      ↵
-
-                    </kbd>
-
-                    Open
-
-                  </div>
-
-                  <div className="flex items-center gap-3">
-
-                    <kbd className="rounded border border-white/10 px-2 py-1">
-
-                      esc
-
-                    </kbd>
-
-                    Close
-
-                  </div>
-
-                </div>
-
-              </CommandPrimitive>
-
-            </motion.div>
-
+                    {recentNotes.length > 0 && (
+                      <Section title="Recent Notes">
+                        {recentNotes.slice(0, 3).map((note) => (
+                          <PaletteItem key={note.id} icon={Clock3} label={note.title || "Untitled Note"} desc="Recently updated" onSelect={() => openNote(note.id)} />
+                        ))}
+                      </Section>
+                    )}
+                  </>
+                )}
+              </CommandPrimitive.List>
+            </CommandPrimitive>
           </motion.div>
-        )}
-
-      </AnimatePresence>
-    </>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
-function Section({
-  title,
-  children,
-}: any) {
+function Section({ title, children }: any) {
   return (
-    <div className="mb-6">
-
-      <div className="mb-3 px-2">
-
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
-
-          {title}
-
-        </p>
-
+    <div className="mb-4">
+      <div className="mb-2 px-3">
+        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{title}</p>
       </div>
-
-      <div className="space-y-2">
-
-        {children}
-
-      </div>
-
+      <div className="space-y-1">{children}</div>
     </div>
   );
 }
 
-function PaletteItem({
-  icon: Icon,
-  color,
-  label,
-  desc,
-  onSelect,
-}: any) {
+function PaletteItem({ icon: Icon, label, desc, onSelect }: any) {
   return (
     <CommandPrimitive.Item
       onSelect={onSelect}
-      className="group flex cursor-pointer items-center gap-4 rounded-[26px] border border-transparent px-4 py-4 text-zinc-300 outline-none transition-all duration-200 hover:border-white/10 hover:bg-white/[0.05] hover:text-white data-[selected=true]:border-white/10 data-[selected=true]:bg-white/[0.06]"
+      className="group flex cursor-pointer items-center justify-between gap-4 rounded-xl px-3 py-3 outline-none transition-colors hover:bg-background data-[selected=true]:bg-background"
     >
-
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03]">
-
-        <Icon
-          className={`h-5 w-5 ${color}`}
-        />
-
-      </div>
-
-      <div className="min-w-0 flex-1">
-
-        <div className="flex items-center justify-between gap-4">
-
-          <p className="truncate text-sm font-semibold text-white">
-
-            {label}
-
-          </p>
-
-          <ArrowRight className="h-4 w-4 opacity-0 transition group-hover:opacity-100" />
-
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background border border-border group-hover:border-accent/30 transition-colors">
+          <Icon className="h-5 w-5 text-accent" />
         </div>
-
-        <p className="mt-1 truncate text-xs text-zinc-500">
-
-          {desc}
-
-        </p>
-
+        <div className="min-w-0">
+          <p className="truncate text-sm font-bold text-foreground group-hover:text-accent transition-colors">{label}</p>
+          {desc && <p className="mt-0.5 truncate text-xs font-medium text-muted-foreground">{desc}</p>}
+        </div>
       </div>
-
+      <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
     </CommandPrimitive.Item>
   );
 }

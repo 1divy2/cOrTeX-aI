@@ -1,210 +1,151 @@
-import {
-  onAuthStateChanged,
-  signInWithPopup,
-  signOut,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  updateProfile,
-  User,
-} from "firebase/auth";
-
+import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/store/auth-store";
+import { useFocusStore } from "@/store/focus-store";
+import { useNotesStore } from "@/store/notes-store";
+import { useTasksStore } from "@/store/tasks-store";
+import { useSettingsStore } from "@/store/settings-store";
 import { useProductivityStore } from "@/store/productivity-store";
+import { useIntelligenceStore } from "@/store/intelligence-store";
 
-import {
-  auth,
-  googleProvider,
-} from "./config";
-
-import {
-  useAuthStore,
-} from "@/store/auth-store";
-import {
-  useFocusStore,
-} from "@/store/focus-store";
-
-let unsubscribeAuth:
-  | (() => void)
-  | null = null;
+let authListener: any = null;
+let isSyncing = false;
+let hasSyncedForSession = false;
 
 export function initAuth() {
-  const {
-  setUser,
-  setLoading,
-  setInitialized,
-} =
-  useAuthStore.getState();
-
+  const { setUser, setLoading, setInitialized } = useAuthStore.getState();
   setLoading(true);
 
-  if (
-    unsubscribeAuth
-  ) {
-    unsubscribeAuth();
+  if (authListener) {
+    authListener.subscription.unsubscribe();
   }
 
-  unsubscribeAuth =
-    onAuthStateChanged(
-      auth,
-      async (
-  user: User | null
-) => {
-        console.log(
-          "AUTH STATE:",
-          user
-            ? user.email
-            : "SIGNED OUT"
-        );
+  // Initial session check
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setUser(session?.user || null);
+    if (session?.user) {
+      if (!isSyncing && !hasSyncedForSession) {
+        setTimeout(() => handleUserLogin(session.user.id), 0);
+      }
+    } else {
+      setLoading(false);
+      setInitialized(true);
+    }
+  });
 
-        setUser(user);
+  const { data } = supabase.auth.onAuthStateChange((event, session) => {
+    console.log("AUTH STATE:", event, session?.user?.email || "SIGNED OUT");
+    setUser(session?.user || null);
 
-if (user) {
-  await useFocusStore
-    .getState()
-    .initializeSessions(
-      user.uid
-    );
-  await useProductivityStore
-  .getState()
-  .initializeMetrics(
-    user.uid
-  );  
+    if (session?.user) {
+      if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        if (!isSyncing && !hasSyncedForSession) {
+          setTimeout(() => handleUserLogin(session.user.id), 0);
+        }
+      }
+    } else {
+      hasSyncedForSession = false;
+      setLoading(false);
+      setInitialized(true);
+    }
+  });
+
+  authListener = data;
 }
 
-setInitialized(true);
-
-setLoading(false);
-      }
-    );
+async function handleUserLogin(userId: string) {
+  if (isSyncing) return;
+  isSyncing = true;
+  try {
+    console.log("[handleUserLogin] Starting for userId:", userId);
+    
+    console.log("[handleUserLogin] Syncing FocusStore");
+    await useFocusStore.getState().initializeSessions(userId);
+    
+    console.log("[handleUserLogin] Syncing ProductivityStore");
+    await useProductivityStore.getState().initializeMetrics(userId);
+    
+    console.log("[handleUserLogin] Syncing NotesStore");
+    await useNotesStore.getState().syncNotes(userId);
+    
+    console.log("[handleUserLogin] Syncing TasksStore");
+    await useTasksStore.getState().syncTasks(userId);
+    
+    console.log("[handleUserLogin] Syncing SettingsStore");
+    await useSettingsStore.getState().syncSettings(userId);
+    
+    console.log("[handleUserLogin] Syncing IntelligenceStore");
+    await useIntelligenceStore.getState().syncIntelligence(userId);
+    
+    console.log("[handleUserLogin] Finished sync successfully");
+  } catch (e) {
+    console.error("Error during sync:", e);
+  } finally {
+    console.log("[handleUserLogin] Setting initialized to true");
+    isSyncing = false;
+    hasSyncedForSession = true;
+    useAuthStore.getState().setInitialized(true);
+    useAuthStore.getState().setLoading(false);
+  }
 }
 
 export async function loginWithGoogle() {
   try {
-    const result =
-      await signInWithPopup(
-        auth,
-        googleProvider
-      );
-
-    console.log(
-      "GOOGLE LOGIN SUCCESS:",
-      result.user.email
-    );
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error(
-      "GOOGLE LOGIN ERROR:",
-      error
-    );
-
-    return {
-      success: false,
-      error,
-    };
-  }
-}
-
-export async function loginWithEmail(
-  email: string,
-  password: string
-) {
-  try {
-    const result =
-      await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-    console.log(
-      "EMAIL LOGIN SUCCESS:",
-      result.user.email
-    );
-
-    return {
-      success: true,
-    };
-  } catch (error) {
-    console.error(
-      "EMAIL LOGIN ERROR:",
-      error
-    );
-
-    return {
-      success: false,
-      error,
-    };
-  }
-}
-
-export async function signupWithEmail(
-  name: string,
-  email: string,
-  password: string
-) {
-  try {
-    const result =
-      await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
-
-    await updateProfile(
-      result.user,
-      {
-        displayName:
-          name,
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
       }
-    );
-
-    console.log(
-      "SIGNUP SUCCESS:",
-      result.user.email
-    );
-
-    return {
-      success: true,
-    };
+    });
+    if (error) throw error;
+    return { success: true };
   } catch (error) {
-    console.error(
-      "SIGNUP ERROR:",
-      error
-    );
+    console.error("GOOGLE LOGIN ERROR:", error);
+    return { success: false, error };
+  }
+}
 
-    return {
-      success: false,
-      error,
-    };
+
+export async function loginWithEmail(email: string, password: string) {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error("EMAIL LOGIN ERROR:", error);
+    return { success: false, error };
+  }
+}
+
+export async function signupWithEmail(name: string, email: string, password: string) {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          full_name: name
+        }
+      }
+    });
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error("SIGNUP ERROR:", error);
+    return { success: false, error };
   }
 }
 
 export async function logout() {
   try {
-    await signOut(auth);
-
-    console.log(
-      "USER LOGGED OUT"
-    );
-
-    useAuthStore
-      .getState()
-      .setUser(null);
-
-    return {
-      success: true,
-    };
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    useAuthStore.getState().setUser(null);
+    return { success: true };
   } catch (error) {
-    console.error(
-      "LOGOUT ERROR:",
-      error
-    );
-
-    return {
-      success: false,
-      error,
-    };
+    console.error("LOGOUT ERROR:", error);
+    return { success: false, error };
   }
 }

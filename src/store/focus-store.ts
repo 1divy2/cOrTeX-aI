@@ -2,6 +2,8 @@ import { create } from "zustand";
 
 import { persist } from "zustand/middleware";
 
+import { useIntelligenceStore } from "@/store/intelligence-store";
+
 import { supabase } from "@/lib/supabase";
 
 type SessionRating =
@@ -169,49 +171,23 @@ export const useFocusStore =
               state,
           }),
 
-        initializeSessions:
-          async (
-            userId
-          ) => {
-            try {
-              const {
-                data,
-                error,
-              } =
-                await supabase
-                  .from(
-                    "focus_sessions"
-                  )
-                  .select("*")
-                  .eq(
-                    "user_id",
-                    userId
-                  )
-                  .order(
-                    "ended_at",
-                    {
-                      ascending:
-                        false,
-                    }
-                  );
+        initializeSessions: async (userId) => {
+          try {
+            console.log("[initializeSessions] Starting for user", userId);
+            const { data, error } = await supabase
+              .from("focus_sessions")
+              .select("*")
+              .eq("user_id", userId)
+              .order("ended_at", { ascending: false });
+            
+            console.log("[initializeSessions] Supabase returned", { data, error });
 
-              if (
-                error
-              ) {
-                console.error(
-                  "SUPABASE LOAD ERROR:",
-                  error
-                );
+            if (error) {
+              console.error("SUPABASE LOAD ERROR:", error);
+              return;
+            }
 
-                return;
-              }
-
-              const sessions:
-                FocusSession[] =
-                (
-                  data ||
-                  []
-                ).map(
+            const sessions: FocusSession[] = (data || []).map(
                   (
                     session
                   ) => ({
@@ -629,6 +605,21 @@ export const useFocusStore =
                       tasks_done: 0,
                     });
                 }
+                
+                // Add Session Review
+                const intelligenceStore = useIntelligenceStore.getState();
+                const trend = newSession.rating >= 4 ? 'up' : (newSession.rating <= 2 ? 'down' : 'flat');
+                const classification = newSession.rating >= 4 ? 'Deep Flow' : (newSession.rating === 3 ? 'Consistency Session' : 'Recovery Session');
+                let improvements = 'Great job staying focused.';
+                if (newSession.rating <= 2) improvements = 'Try reducing distractions next time and breaking tasks into smaller chunks.';
+
+                await intelligenceStore.addSessionReview({
+                  sessionId: newSession.id,
+                  classification,
+                  improvements,
+                  trend
+                });
+                intelligenceStore.calculateScores();
               }
             } catch (
               error

@@ -6,8 +6,6 @@ import Hero from "@/components/landing/Hero";
 
 import { Features } from "@/components/landing/Features";
 
-import { AISection } from "@/components/landing/AISection";
-
 import { Stats } from "@/components/landing/Stats";
 
 import { CTA } from "@/components/landing/CTA";
@@ -22,24 +20,24 @@ export const Route =
       meta: [
         {
           title:
-            "corTeX.ai — The operating system for deep work",
+            "corTeX — The operating system for deep work",
         },
         {
           name: "description",
           content:
-            "corTeX.ai is the AI-native second brain for deep workers. Notes, tasks, focus and workspace AI — unified in one calm, futuristic workspace.",
+            "corTeX is a distraction-free second brain for deep workers. Notes, tasks, and focus sessions — unified in one calm workspace.",
         },
         {
           property:
             "og:title",
           content:
-            "corTeX.ai — The operating system for deep work",
+            "corTeX — The operating system for deep work",
         },
         {
           property:
             "og:description",
           content:
-            "An AI-native second brain for students, builders and researchers. Designed like Apple, intelligent like the future.",
+            "A distraction-free second brain for students, builders and researchers. Designed like Apple, engineered for flow.",
         },
       ],
     }),
@@ -65,13 +63,6 @@ function Landing() {
           duration={0.9}
         >
           <Features />
-        </Reveal>
-
-        <Reveal
-          delay={0.15}
-          duration={0.9}
-        >
-          <AISection />
         </Reveal>
 
         <Reveal

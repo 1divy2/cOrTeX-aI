@@ -13,10 +13,18 @@ import { Route as WorkspaceRouteImport } from './routes/workspace'
 import { Route as TestAiRouteImport } from './routes/test-ai'
 import { Route as TasksRouteImport } from './routes/tasks'
 import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ReviewsRouteImport } from './routes/reviews'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ProjectsRouteImport } from './routes/projects'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PlannerRouteImport } from './routes/planner'
 import { Route as NotesRouteImport } from './routes/notes'
+import { Route as KnowledgeRouteImport } from './routes/knowledge'
+import { Route as HabitsRouteImport } from './routes/habits'
 import { Route as GraphRouteImport } from './routes/graph'
+import { Route as ForecastRouteImport } from './routes/forecast'
 import { Route as FocusRouteImport } from './routes/focus'
+import { Route as CommandCenterRouteImport } from './routes/command-center'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AssistantRouteImport } from './routes/assistant'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
@@ -49,9 +57,29 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewsRoute = ReviewsRouteImport.update({
+  id: '/reviews',
+  path: '/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProjectsRoute = ProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PlannerRoute = PlannerRouteImport.update({
+  id: '/planner',
+  path: '/planner',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotesRoute = NotesRouteImport.update({
@@ -59,14 +87,34 @@ const NotesRoute = NotesRouteImport.update({
   path: '/notes',
   getParentRoute: () => rootRouteImport,
 } as any)
+const KnowledgeRoute = KnowledgeRouteImport.update({
+  id: '/knowledge',
+  path: '/knowledge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HabitsRoute = HabitsRouteImport.update({
+  id: '/habits',
+  path: '/habits',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GraphRoute = GraphRouteImport.update({
   id: '/graph',
   path: '/graph',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ForecastRoute = ForecastRouteImport.update({
+  id: '/forecast',
+  path: '/forecast',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FocusRoute = FocusRouteImport.update({
   id: '/focus',
   path: '/focus',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CommandCenterRoute = CommandCenterRouteImport.update({
+  id: '/command-center',
+  path: '/command-center',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -131,10 +179,18 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRoute
+  '/command-center': typeof CommandCenterRoute
   '/focus': typeof FocusRoute
+  '/forecast': typeof ForecastRoute
   '/graph': typeof GraphRoute
+  '/habits': typeof HabitsRoute
+  '/knowledge': typeof KnowledgeRoute
   '/notes': typeof NotesRoute
+  '/planner': typeof PlannerRoute
   '/profile': typeof ProfileRoute
+  '/projects': typeof ProjectsRoute
+  '/reports': typeof ReportsRoute
+  '/reviews': typeof ReviewsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
   '/test-ai': typeof TestAiRoute
@@ -152,10 +208,18 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsRoute
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRoute
+  '/command-center': typeof CommandCenterRoute
   '/focus': typeof FocusRoute
+  '/forecast': typeof ForecastRoute
   '/graph': typeof GraphRoute
+  '/habits': typeof HabitsRoute
+  '/knowledge': typeof KnowledgeRoute
   '/notes': typeof NotesRoute
+  '/planner': typeof PlannerRoute
   '/profile': typeof ProfileRoute
+  '/projects': typeof ProjectsRoute
+  '/reports': typeof ReportsRoute
+  '/reviews': typeof ReviewsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
   '/test-ai': typeof TestAiRoute
@@ -173,10 +237,18 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/assistant': typeof AssistantRoute
   '/auth': typeof AuthRoute
+  '/command-center': typeof CommandCenterRoute
   '/focus': typeof FocusRoute
+  '/forecast': typeof ForecastRoute
   '/graph': typeof GraphRoute
+  '/habits': typeof HabitsRoute
+  '/knowledge': typeof KnowledgeRoute
   '/notes': typeof NotesRoute
+  '/planner': typeof PlannerRoute
   '/profile': typeof ProfileRoute
+  '/projects': typeof ProjectsRoute
+  '/reports': typeof ReportsRoute
+  '/reviews': typeof ReviewsRoute
   '/settings': typeof SettingsRoute
   '/tasks': typeof TasksRoute
   '/test-ai': typeof TestAiRoute
@@ -196,10 +268,18 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/assistant'
     | '/auth'
+    | '/command-center'
     | '/focus'
+    | '/forecast'
     | '/graph'
+    | '/habits'
+    | '/knowledge'
     | '/notes'
+    | '/planner'
     | '/profile'
+    | '/projects'
+    | '/reports'
+    | '/reviews'
     | '/settings'
     | '/tasks'
     | '/test-ai'
@@ -217,10 +297,18 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/assistant'
     | '/auth'
+    | '/command-center'
     | '/focus'
+    | '/forecast'
     | '/graph'
+    | '/habits'
+    | '/knowledge'
     | '/notes'
+    | '/planner'
     | '/profile'
+    | '/projects'
+    | '/reports'
+    | '/reviews'
     | '/settings'
     | '/tasks'
     | '/test-ai'
@@ -237,10 +325,18 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/assistant'
     | '/auth'
+    | '/command-center'
     | '/focus'
+    | '/forecast'
     | '/graph'
+    | '/habits'
+    | '/knowledge'
     | '/notes'
+    | '/planner'
     | '/profile'
+    | '/projects'
+    | '/reports'
+    | '/reviews'
     | '/settings'
     | '/tasks'
     | '/test-ai'
@@ -259,10 +355,18 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   AssistantRoute: typeof AssistantRoute
   AuthRoute: typeof AuthRoute
+  CommandCenterRoute: typeof CommandCenterRoute
   FocusRoute: typeof FocusRoute
+  ForecastRoute: typeof ForecastRoute
   GraphRoute: typeof GraphRoute
+  HabitsRoute: typeof HabitsRoute
+  KnowledgeRoute: typeof KnowledgeRoute
   NotesRoute: typeof NotesRoute
+  PlannerRoute: typeof PlannerRoute
   ProfileRoute: typeof ProfileRoute
+  ProjectsRoute: typeof ProjectsRoute
+  ReportsRoute: typeof ReportsRoute
+  ReviewsRoute: typeof ReviewsRoute
   SettingsRoute: typeof SettingsRoute
   TasksRoute: typeof TasksRoute
   TestAiRoute: typeof TestAiRoute
@@ -299,11 +403,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reviews': {
+      id: '/reviews'
+      path: '/reviews'
+      fullPath: '/reviews'
+      preLoaderRoute: typeof ReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/projects': {
+      id: '/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof ProjectsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/planner': {
+      id: '/planner'
+      path: '/planner'
+      fullPath: '/planner'
+      preLoaderRoute: typeof PlannerRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notes': {
@@ -313,6 +445,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof NotesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/knowledge': {
+      id: '/knowledge'
+      path: '/knowledge'
+      fullPath: '/knowledge'
+      preLoaderRoute: typeof KnowledgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/habits': {
+      id: '/habits'
+      path: '/habits'
+      fullPath: '/habits'
+      preLoaderRoute: typeof HabitsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/graph': {
       id: '/graph'
       path: '/graph'
@@ -320,11 +466,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GraphRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/forecast': {
+      id: '/forecast'
+      path: '/forecast'
+      fullPath: '/forecast'
+      preLoaderRoute: typeof ForecastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/focus': {
       id: '/focus'
       path: '/focus'
       fullPath: '/focus'
       preLoaderRoute: typeof FocusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/command-center': {
+      id: '/command-center'
+      path: '/command-center'
+      fullPath: '/command-center'
+      preLoaderRoute: typeof CommandCenterRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -435,10 +595,18 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   AssistantRoute: AssistantRoute,
   AuthRoute: AuthRoute,
+  CommandCenterRoute: CommandCenterRoute,
   FocusRoute: FocusRoute,
+  ForecastRoute: ForecastRoute,
   GraphRoute: GraphRoute,
+  HabitsRoute: HabitsRoute,
+  KnowledgeRoute: KnowledgeRoute,
   NotesRoute: NotesRoute,
+  PlannerRoute: PlannerRoute,
   ProfileRoute: ProfileRoute,
+  ProjectsRoute: ProjectsRoute,
+  ReportsRoute: ReportsRoute,
+  ReviewsRoute: ReviewsRoute,
   SettingsRoute: SettingsRoute,
   TasksRoute: TasksRoute,
   TestAiRoute: TestAiRoute,

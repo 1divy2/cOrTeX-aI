@@ -35,7 +35,7 @@ export default function NoteEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-invert max-w-none min-h-[700px] focus:outline-none text-zinc-200",
+          "prose prose-invert max-w-none min-h-[700px] focus:outline-none text-foreground prose-headings:text-foreground prose-p:text-foreground/90 prose-a:text-accent prose-strong:text-foreground prose-code:text-accent prose-blockquote:border-accent",
       },
     },
 
@@ -55,7 +55,7 @@ export default function NoteEditor({
   return (
     <div className="flex h-full flex-col">
 
-      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-white/10 bg-background/70 px-6 py-4 backdrop-blur-2xl">
+      <div className="sticky top-0 z-20 flex flex-wrap items-center gap-2 border-b border-border bg-background/80 px-6 py-4 backdrop-blur-2xl">
 
         <ToolbarButton
           active={editor.isActive(
@@ -233,8 +233,8 @@ function ToolbarButton({
       onClick={onClick}
       className={`flex h-10 w-10 items-center justify-center rounded-xl border transition ${
         active
-          ? "border-purple-500/30 bg-purple-500/20 text-white"
-          : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-white"
+          ? "border-accent/30 bg-accent/10 text-accent"
+          : "border-border bg-secondary text-muted-foreground hover:border-border hover:bg-background hover:text-foreground"
       }`}
     >
 

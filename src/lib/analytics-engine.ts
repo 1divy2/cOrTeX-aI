@@ -69,6 +69,14 @@ export type AnalyticsData = {
     hour: number;
     sessions: number;
   }[];
+
+  timeline: {
+    id: string;
+    type: 'session' | 'note' | 'habit' | 'task';
+    title: string;
+    timestamp: number;
+    metadata?: any;
+  }[];
 };
 
 const DAY_NAMES = [
@@ -82,7 +90,10 @@ const DAY_NAMES = [
 ];
 
 export function generateAnalytics(
-  sessions: FocusSession[]
+  sessions: FocusSession[],
+  notes: any[] = [],
+  habitLogs: any[] = [],
+  tasks: any[] = []
 ): AnalyticsData {
   if (!sessions.length) {
     return {
@@ -108,6 +119,7 @@ export function generateAnalytics(
       velocityTrend: [],
       heatmap: [],
       peakHoursMap: [],
+      timeline: [],
     };
   }
 
@@ -549,7 +561,11 @@ export function generateAnalytics(
 
     heatmap,
 
-    peakHoursMap:
-      hourlyMap,
+    peakHoursMap: hourlyMap,
+    timeline: [...sessions.map(s => ({ id: s.id, type: 'session' as const, title: 'Deep Work Session', timestamp: s.startedAt, metadata: { duration: s.duration, rating: s.rating } })),
+               ...notes.map(n => ({ id: n.id, type: 'note' as const, title: n.title, timestamp: n.createdAt })),
+               ...habitLogs.map(h => ({ id: h.id, type: 'habit' as const, title: 'Habit Completed', timestamp: h.createdAt })),
+               ...tasks.map(t => ({ id: t.id, type: 'task' as const, title: t.title, timestamp: t.createdAt }))
+              ].sort((a, b) => b.timestamp - a.timestamp).slice(0, 50),
   };
 }

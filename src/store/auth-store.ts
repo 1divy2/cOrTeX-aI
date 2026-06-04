@@ -2,9 +2,7 @@ import {
   create,
 } from "zustand";
 
-import {
-  User,
-} from "firebase/auth";
+import { User } from "@supabase/supabase-js";
 
 type AuthState = {
   user: User | null;
