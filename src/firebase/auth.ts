@@ -90,13 +90,17 @@ async function handleUserLogin(userId: string) {
 
 export async function loginWithGoogle() {
   try {
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
+        skipBrowserRedirect: true,
         redirectTo: window.location.origin
       }
     });
     if (error) throw error;
+    if (data?.url) {
+      window.open(data.url, '_blank');
+    }
     return { success: true };
   } catch (error) {
     console.error("GOOGLE LOGIN ERROR:", error);
