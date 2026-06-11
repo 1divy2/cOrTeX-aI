@@ -19,13 +19,9 @@ export default function ProfilePage() {
   const productivity = useProductivityStore();
   const notes = useNotesStore((state) => state.notes);
 
-  const joined =
-    user?.metadata
-      ?.creationTime
-      ? new Date(
-          user.metadata.creationTime
-        ).toLocaleDateString()
-      : "Recently";
+  const joined = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString()
+    : "Recently";
 
   return (
     <div className="min-h-screen overflow-hidden bg-[#05010a] text-white">

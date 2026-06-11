@@ -86,8 +86,8 @@ ${memoryCtx}
     `.trim();
   }, [notes, memories]);
 
-  const [conversations, setConversations] = useState<Conversation[]>([createInitialConversation()]);
-  const [activeConversationId, setActiveConversationId] = useState("");
+  const [conversations, setConversations] = useState<Conversation[]>(() => [createInitialConversation()]);
+  const [activeConversationId, setActiveConversationId] = useState<string>(() => conversations[0].id);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [streamingText, setStreamingText] = useState("");
