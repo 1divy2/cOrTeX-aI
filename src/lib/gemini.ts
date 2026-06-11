@@ -83,18 +83,44 @@ For a time block:
   return basePrompt;
 };
 
+const MODELS_TO_TRY = [
+  "gemini-1.5-flash",
+  "gemini-1.5-flash-latest",
+  "gemini-1.5-pro",
+  "gemini-1.5-pro-latest",
+  "gemini-1.0-pro",
+  "gemini-pro"
+];
+
 export async function askGemini(
   prompt: string,
   mode: AgentMode = 'default',
   contextStr: string = ""
 ) {
-  const model = getGenAI().getGenerativeModel({
-    model: "gemini-1.5-flash-latest",
-    systemInstruction: getSystemPrompt(mode, contextStr),
-  });
+  const sysPrompt = getSystemPrompt(mode, contextStr);
+  const genAI = getGenAI();
+  let lastError: any;
 
-  const result = await model.generateContent(prompt);
-  return result.response.text();
+  for (const modelName of MODELS_TO_TRY) {
+    try {
+      const isLegacy = modelName.includes("1.0") || modelName === "gemini-pro";
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: isLegacy ? undefined : sysPrompt,
+      });
+
+      const requestPrompt = isLegacy ? `${sysPrompt}\n\nUser Request: ${prompt}` : prompt;
+      const result = await model.generateContent(requestPrompt);
+      return result.response.text();
+    } catch (error: any) {
+      console.warn(`Model ${modelName} failed:`, error?.message);
+      lastError = error;
+      if (error?.message?.includes("API key not valid") || error?.status === 400) {
+        throw error;
+      }
+    }
+  }
+  throw lastError;
 }
 
 export async function streamGemini(
@@ -103,38 +129,35 @@ export async function streamGemini(
   mode: AgentMode = 'default',
   contextStr: string = ""
 ) {
-  try {
-    const model = getGenAI().getGenerativeModel({
-      model: "gemini-1.5-flash-latest",
-      systemInstruction: getSystemPrompt(mode, contextStr),
-    });
+  const sysPrompt = getSystemPrompt(mode, contextStr);
+  const genAI = getGenAI();
+  let lastError: any;
 
-    const result = await model.generateContentStream(prompt);
-    let fullText = "";
+  for (const modelName of MODELS_TO_TRY) {
+    try {
+      const isLegacy = modelName.includes("1.0") || modelName === "gemini-pro";
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction: isLegacy ? undefined : sysPrompt,
+      });
 
-    for await (const chunk of result.stream) {
-      const text = chunk.text();
-      fullText += text;
-      onChunk(fullText);
+      const requestPrompt = isLegacy ? `${sysPrompt}\n\nUser Request: ${prompt}` : prompt;
+      const result = await model.generateContentStream(requestPrompt);
+      
+      let fullText = "";
+      for await (const chunk of result.stream) {
+        const text = chunk.text();
+        fullText += text;
+        onChunk(fullText);
+      }
+      return fullText;
+    } catch (error: any) {
+      console.warn(`Model ${modelName} failed in stream:`, error?.message);
+      lastError = error;
+      if (error?.message?.includes("API key not valid") || error?.status === 400) {
+        throw error;
+      }
     }
-
-    return fullText;
-  } catch (error: any) {
-    console.warn("Falling back to gemini-pro due to:", error?.message);
-    const fallbackModel = getGenAI().getGenerativeModel({
-      model: "gemini-pro",
-    });
-    
-    const combinedPrompt = `${getSystemPrompt(mode, contextStr)}\n\nUser Request: ${prompt}`;
-    const result = await fallbackModel.generateContentStream(combinedPrompt);
-    let fullText = "";
-
-    for await (const chunk of result.stream) {
-      const text = chunk.text();
-      fullText += text;
-      onChunk(fullText);
-    }
-
-    return fullText;
   }
+  throw lastError;
 }
