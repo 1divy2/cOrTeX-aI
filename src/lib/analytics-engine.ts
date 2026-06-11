@@ -63,6 +63,7 @@ export type AnalyticsData = {
     date: string;
     sessions: number;
     minutes: number;
+    notes: number;
   }[];
 
   peakHoursMap: {
@@ -415,66 +416,34 @@ export function generateAnalytics(
     }
   );
 
-  const heatmapMap =
-    new Map<
-      string,
-      {
-        sessions: number;
-        minutes: number;
-      }
-    >();
+  const heatmapMap = new Map<string, { sessions: number; minutes: number; notes: number }>();
 
-  sessions.forEach(
-    (session) => {
-      const date =
-        new Date(
-          session.endedAt
-        )
-          .toISOString()
-          .split(
-            "T"
-          )[0];
+  sessions.forEach((session) => {
+    const date = new Date(session.endedAt).toISOString().split("T")[0];
+    const current = heatmapMap.get(date) || { sessions: 0, minutes: 0, notes: 0 };
+    heatmapMap.set(date, {
+      sessions: current.sessions + 1,
+      minutes: current.minutes + Math.round(session.duration / 60),
+      notes: current.notes,
+    });
+  });
 
-      const current =
-        heatmapMap.get(
-          date
-        ) || {
-          sessions: 0,
-          minutes: 0,
-        };
+  notes.forEach((note) => {
+    if (!note.createdAt) return;
+    const date = new Date(note.createdAt).toISOString().split("T")[0];
+    const current = heatmapMap.get(date) || { sessions: 0, minutes: 0, notes: 0 };
+    heatmapMap.set(date, {
+      ...current,
+      notes: current.notes + 1,
+    });
+  });
 
-      heatmapMap.set(
-        date,
-        {
-          sessions:
-            current.sessions +
-            1,
-          minutes:
-            current.minutes +
-            Math.round(
-              session.duration /
-                60
-            ),
-        }
-      );
-    }
-  );
-
-  const heatmap =
-    Array.from(
-      heatmapMap.entries()
-    ).map(
-      ([
-        date,
-        value,
-      ]) => ({
-        date,
-        sessions:
-          value.sessions,
-        minutes:
-          value.minutes,
-      })
-    );
+  const heatmap = Array.from(heatmapMap.entries()).map(([date, value]) => ({
+    date,
+    sessions: value.sessions,
+    minutes: value.minutes,
+    notes: value.notes,
+  }));
 
   const momentum =
     Math.min(

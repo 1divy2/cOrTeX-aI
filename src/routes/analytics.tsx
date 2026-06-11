@@ -91,14 +91,22 @@ function AnalyticsPage() {
                     <AreaChart data={analytics.weeklyTrend} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                       <defs>
                         <linearGradient id="colorHours" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3} />
+                          <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.4} />
                           <stop offset="95%" stopColor="var(--accent)" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
                       <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: "var(--muted-foreground)", fontSize: 11, fontWeight: 600 }} dy={10} />
-                      <Tooltip content={<CustomTooltip />} />
-                      <Area type="monotone" dataKey="hours" stroke="var(--accent)" strokeWidth={3} fillOpacity={1} fill="url(#colorHours)" />
+                      <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--border)', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                      <Area 
+                        type="monotone" 
+                        dataKey="hours" 
+                        stroke="var(--accent)" 
+                        strokeWidth={3} 
+                        fillOpacity={1} 
+                        fill="url(#colorHours)" 
+                        activeDot={{ r: 6, fill: "var(--background)", stroke: "var(--accent)", strokeWidth: 2 }} 
+                      />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -142,7 +150,7 @@ function AnalyticsPage() {
                           { name: 'Evening', value: analytics.focusDistribution.evening },
                           { name: 'Night', value: analytics.focusDistribution.night },
                         ]}
-                        cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value"
+                        cx="50%" cy="50%" innerRadius={70} outerRadius={90} paddingAngle={8} dataKey="value" stroke="none" cornerRadius={4}
                       >
                         <Cell fill="var(--accent)" />
                         <Cell fill="var(--foreground)" />
@@ -167,8 +175,13 @@ function AnalyticsPage() {
                       <BarChart data={analytics.peakHoursMap} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" opacity={0.5} />
                         <XAxis dataKey="hour" axisLine={false} tickLine={false} tickFormatter={(h) => `${h}:00`} tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} dy={10} />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="sessions" fill="var(--foreground)" radius={[4, 4, 0, 0]} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--secondary)', opacity: 0.5 }} />
+                        <Bar 
+                          dataKey="sessions" 
+                          fill="var(--foreground)" 
+                          radius={[6, 6, 0, 0]} 
+                          activeBar={{ fill: 'var(--accent)', stroke: 'var(--accent)' }} 
+                        />
                       </BarChart>
                     </ResponsiveContainer>
                  </div>
@@ -186,12 +199,12 @@ function AnalyticsPage() {
                   ) : (
                     analytics.timeline.map((event, idx) => (
                       <div key={`${event.id}-${idx}`} className="relative pl-8">
-                        <div className="absolute -left-[11px] top-1 h-5 w-5 rounded-full border-[3px] border-background bg-accent" />
+                        <div className={`absolute -left-[11px] top-1 h-5 w-5 rounded-full border-[3px] border-background ${event.type === 'session' ? 'bg-accent shadow-[0_0_8px_var(--accent)] shadow-accent/40' : event.type === 'note' ? 'bg-foreground' : 'bg-muted'}`} />
                         <div className="flex flex-col gap-1">
-                          <p className="text-xs font-bold uppercase text-muted-foreground">{new Date(event.timestamp).toLocaleString()}</p>
+                          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{new Date(event.timestamp).toLocaleString()}</p>
                           <h4 className="text-lg font-bold text-foreground">{event.title}</h4>
                           {event.type === 'session' && (
-                            <p className="text-sm text-muted-foreground">Duration: {Math.round(event.metadata.duration / 60)} mins • Quality: {event.metadata.rating}/8</p>
+                            <p className="text-sm font-medium text-muted-foreground">Duration: <span className="text-foreground">{Math.round(event.metadata.duration / 60)} mins</span> • Quality: <span className="text-foreground">{event.metadata.rating}/8</span></p>
                           )}
                         </div>
                       </div>
@@ -274,49 +287,115 @@ function ExecutiveMetric({ label, value, trend, icon: Icon }: any) {
 }
 
 function ConsistencyHeatmap({ data }: { data: any[] }) {
-  const weeks = 24;
+  const weeks = 36;
   const today = new Date();
-  const cells: { date: string; value: number; minutes: number }[] = [];
+  const startOffset = today.getDay();
+  const totalDays = (weeks * 7) + startOffset;
 
-  for (let i = weeks * 7; i >= 0; i--) {
+  const cells: { date: string; value: number; minutes: number; notes: number }[] = [];
+
+  for (let i = totalDays; i >= 0; i--) {
     const date = new Date();
     date.setDate(today.getDate() - i);
     const key = date.toISOString().split("T")[0];
-    const match = data.find(d => d.date === key);
-    cells.push({ date: key, value: match?.sessions || 0, minutes: match?.minutes || 0 });
+    const match = data.find((d) => d.date === key);
+    cells.push({
+      date: key,
+      value: match?.sessions || 0,
+      minutes: match?.minutes || 0,
+      notes: match?.notes || 0,
+    });
   }
 
   const intensity = (value: number) => {
-    if (value === 0) return "bg-background border-border";
+    if (value === 0) return "bg-secondary/50 border-border/30";
     if (value === 1) return "bg-accent/30 border-accent/20";
     if (value === 2) return "bg-accent/60 border-accent/50";
-    if (value >= 3) return "bg-accent border-accent";
-    return "bg-foreground border-foreground";
+    if (value >= 3) return "bg-accent border-accent shadow-[0_0_8px_var(--accent)] shadow-accent/20";
+    return "bg-foreground border-foreground shadow-[0_0_12px_var(--foreground)] shadow-foreground/20";
   };
+
+  const numCols = Math.ceil(cells.length / 7);
+
+  const monthLabels: { label: string; colIndex: number }[] = [];
+  let currentMonth = -1;
+  for (let c = 0; c < numCols; c++) {
+    const firstDayOfCol = cells[c * 7];
+    if (firstDayOfCol) {
+      const month = new Date(firstDayOfCol.date).getMonth();
+      if (month !== currentMonth) {
+        monthLabels.push({
+          label: new Date(firstDayOfCol.date).toLocaleString("default", { month: "short" }),
+          colIndex: c,
+        });
+        currentMonth = month;
+      }
+    }
+  }
 
   return (
     <div className="w-full overflow-x-auto custom-scrollbar pb-4">
-      <div className="flex gap-[4px] min-w-max">
-        {Array.from({ length: weeks }).map((_, weekIndex) => (
-          <div key={weekIndex} className="flex flex-col gap-[4px]">
-            {Array.from({ length: 7 }).map((__, dayIndex) => {
-              const cell = cells[weekIndex * 7 + dayIndex];
-              if (!cell) return null;
-              return (
-                <div key={cell.date} className="group relative">
-                  <div
-                    className={`h-[14px] w-[14px] rounded-[3px] border transition-all duration-200 cursor-pointer hover:ring-2 hover:ring-foreground/50 ${intensity(cell.value)}`}
-                  />
-                  <div className="pointer-events-none absolute bottom-[150%] left-1/2 z-50 hidden min-w-[140px] -translate-x-1/2 rounded-[8px] border border-border bg-zinc-900 px-3 py-2 text-xs text-white shadow-xl group-hover:block whitespace-nowrap">
-                    <p className="font-bold text-white mb-1">{new Date(cell.date).toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</p>
-                    <p className="text-zinc-400">{cell.value} sessions</p>
-                    <p className="text-zinc-400">{cell.minutes} deep work mins</p>
-                  </div>
-                </div>
-              );
-            })}
+      <div className="min-w-max flex flex-col gap-2">
+        <div className="flex relative h-4 text-[10px] font-bold text-muted-foreground ml-8">
+          {monthLabels.map((m, i) => (
+            <div key={i} className="absolute top-0" style={{ left: `${m.colIndex * 18}px` }}>
+              {m.label}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex gap-[4px]">
+          <div className="flex flex-col gap-[4px] pr-2 text-[9px] font-bold text-muted-foreground justify-between py-1">
+            <div className="h-[14px] leading-[14px]">Sun</div>
+            <div className="h-[14px] leading-[14px]"></div>
+            <div className="h-[14px] leading-[14px]">Tue</div>
+            <div className="h-[14px] leading-[14px]"></div>
+            <div className="h-[14px] leading-[14px]">Thu</div>
+            <div className="h-[14px] leading-[14px]"></div>
+            <div className="h-[14px] leading-[14px]">Sat</div>
           </div>
-        ))}
+
+          {Array.from({ length: numCols }).map((_, colIndex) => (
+            <div key={colIndex} className="flex flex-col gap-[4px]">
+              {Array.from({ length: 7 }).map((__, rowIndex) => {
+                const cell = cells[colIndex * 7 + rowIndex];
+                if (!cell) return <div key={rowIndex} className="h-[14px] w-[14px]" />;
+
+                return (
+                  <div key={cell.date} className="group relative">
+                    <div
+                      className={`h-[14px] w-[14px] rounded-[4px] border transition-all duration-300 cursor-pointer hover:ring-2 hover:ring-foreground/50 hover:scale-110 z-10 ${intensity(
+                        cell.value
+                      )}`}
+                    />
+                    <div className="pointer-events-none absolute bottom-[150%] left-1/2 z-50 hidden min-w-[160px] -translate-x-1/2 rounded-xl border border-border bg-background/95 backdrop-blur-md px-3 py-2.5 text-xs text-foreground shadow-xl group-hover:block whitespace-nowrap">
+                      <p className="font-bold text-foreground mb-2 pb-2 border-b border-border">
+                        {new Date(cell.date).toLocaleDateString("en-US", {
+                          weekday: "long",
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </p>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-muted-foreground">Focus Sessions</span>
+                        <span className="font-bold">{cell.value}</span>
+                      </div>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-muted-foreground">Deep Work</span>
+                        <span className="font-bold">{cell.minutes}m</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Knowledge Notes</span>
+                        <span className="font-bold">{cell.notes}</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -325,9 +404,9 @@ function ConsistencyHeatmap({ data }: { data: any[] }) {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="rounded-xl border border-border bg-background p-3 shadow-lg">
-        <p className="text-xs font-bold uppercase text-muted-foreground">{label || payload[0].name || payload[0].payload.name}</p>
-        <p className="text-lg font-bold text-foreground">{payload[0].value}</p>
+      <div className="rounded-xl border border-border bg-background/95 backdrop-blur-md p-4 shadow-xl">
+        <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">{label || payload[0].name || payload[0].payload.name}</p>
+        <p className="text-2xl font-display font-bold text-foreground">{payload[0].value}</p>
       </div>
     );
   }
