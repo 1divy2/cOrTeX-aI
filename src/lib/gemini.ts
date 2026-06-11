@@ -103,19 +103,38 @@ export async function streamGemini(
   mode: AgentMode = 'default',
   contextStr: string = ""
 ) {
-  const model = getGenAI().getGenerativeModel({
-    model: "gemini-1.5-flash-latest",
-    systemInstruction: getSystemPrompt(mode, contextStr),
-  });
+  try {
+    const model = getGenAI().getGenerativeModel({
+      model: "gemini-1.5-flash-latest",
+      systemInstruction: getSystemPrompt(mode, contextStr),
+    });
 
-  const result = await model.generateContentStream(prompt);
-  let fullText = "";
+    const result = await model.generateContentStream(prompt);
+    let fullText = "";
 
-  for await (const chunk of result.stream) {
-    const text = chunk.text();
-    fullText += text;
-    onChunk(fullText);
+    for await (const chunk of result.stream) {
+      const text = chunk.text();
+      fullText += text;
+      onChunk(fullText);
+    }
+
+    return fullText;
+  } catch (error: any) {
+    console.warn("Falling back to gemini-pro due to:", error?.message);
+    const fallbackModel = getGenAI().getGenerativeModel({
+      model: "gemini-pro",
+    });
+    
+    const combinedPrompt = `${getSystemPrompt(mode, contextStr)}\n\nUser Request: ${prompt}`;
+    const result = await fallbackModel.generateContentStream(combinedPrompt);
+    let fullText = "";
+
+    for await (const chunk of result.stream) {
+      const text = chunk.text();
+      fullText += text;
+      onChunk(fullText);
+    }
+
+    return fullText;
   }
-
-  return fullText;
 }
